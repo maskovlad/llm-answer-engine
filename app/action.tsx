@@ -295,18 +295,7 @@ const relevantQuestions = async (sources: SearchResult[]): Promise<any> => {
     messages: [
       {
         role: "system",
-        content: `
-          You are a Question generator who generates an array of 3 follow-up questions in JSON format.
-          The JSON schema should include:
-          {
-            "original": "The original search query or context",
-            "followUp": [
-              "Question 1",
-              "Question 2", 
-              "Question 3"
-            ]
-          }
-          `,
+        content: 'You are a Question generator who generates an array of 3 follow-up questions in JSON format.The JSON schema should include: {"original": "The original search query or context","followUp": ["Question 1", "Question 2", "Question 3"]}',
       },
       {
         role: "user",
