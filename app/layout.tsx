@@ -10,9 +10,9 @@ import { Header } from '@/components/header';
 import { Providers } from '@/components/providers';
 
 const meta = {
-  title: 'answers, how they should be displayed.',
+  title: 'А якщо знайду?',
   description:
-    'anwser engine built by developers digest',
+    'Пошукова ШІ-система від Vovacode',
 };
 export const metadata: Metadata = {
   ...meta,
