@@ -335,19 +335,19 @@ async function myAction(userMessage: string): Promise<any> {
       }
     }
 
-    const [images, sources, videos, condtionalFunctionCallUI] = await Promise.all([
+    const [images, sources, videos /*,condtionalFunctionCallUI*/] = await Promise.all([
       getImages(userMessage),
       getSources(userMessage),
       getVideos(userMessage),
-      functionCalling(userMessage),
+      // functionCalling(userMessage),
     ]);
 
     streamable.update({ 'searchResults': sources });
     streamable.update({ 'images': images });
     streamable.update({ 'videos': videos });
-    if (config.useFunctionCalling) {
-      streamable.update({ 'conditionalFunctionCallUI': condtionalFunctionCallUI });
-    }
+    // if (config.useFunctionCalling) {
+    //   streamable.update({ 'conditionalFunctionCallUI': condtionalFunctionCallUI });
+    // }
 
     const html = await get10BlueLinksContents(sources);
     const vectorResults = await processAndVectorizeContent(html, userMessage);
