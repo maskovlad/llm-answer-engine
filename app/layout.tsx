@@ -17,8 +17,8 @@ const meta = {
 export const metadata: Metadata = {
   ...meta,
   title: {
-    default: 'answer website',
-    template: `%s - answer website`,
+    default: 'NAIDA - Пошукова ШІстема',
+    template: `%s - NAIDA - Пошукова ШІстема`,
   },
   icons: {
     icon: '/favicon.ico',
