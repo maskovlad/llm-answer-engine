@@ -116,7 +116,7 @@ export async function get10BlueLinksContents(sources: SearchResult[]): Promise<C
       return response;
     } catch (error) {
       if (error) {
-        console.log(`Пропущено ${url}!`);
+        //console.log(`Пропущено ${url}!`);
       }
       throw error;
     }
@@ -223,7 +223,7 @@ export async function getImages(message: string): Promise<{ title: string; link:
               }
             }
           } catch (error) {
-            console.error(`Помилка запиту лінка зображення. Функція getImages ${link}:`, error);
+            // console.error(`Помилка запиту лінка зображення. Функція getImages ${link}:`, error);
           }
         }
         return null;
@@ -323,6 +323,8 @@ async function myAction(userMessage: string): Promise<any> {
         return streamable.done({ 'status': 'rateLimitReached' });
       }
     }
+    const start = Date.now()
+    console.log({ start })
 
     const [images, sources, videos /*,condtionalFunctionCallUI*/] = await Promise.all([
       getImages(userMessage),
@@ -330,6 +332,9 @@ async function myAction(userMessage: string): Promise<any> {
       getVideos(userMessage),
       // functionCalling(userMessage),
     ]);
+
+    const endGets = Date.now()
+    console.log({ endGets: endGets - start })
 
     streamable.update({ 'searchResults': sources });
     streamable.update({ 'images': images });
@@ -339,7 +344,16 @@ async function myAction(userMessage: string): Promise<any> {
     // }
 
     const html = await get10BlueLinksContents(sources);
+
+
+    const get10BlueLinksContents1 = Date.now()
+    console.log({ get10BlueLinksContents1: get10BlueLinksContents1 - endGets })
+
     const vectorResults = await processAndVectorizeContent(html, userMessage);
+
+    const processAndVectorizeContent1 = Date.now()
+    console.log({ processAndVectorizeContent1: processAndVectorizeContent1 - get10BlueLinksContents1 })
+
 
     // Создаем модель ответа для данного разговора в чате.
     const chatCompletion = await openai.chat.completions.create({
@@ -353,6 +367,10 @@ async function myAction(userMessage: string): Promise<any> {
     });
 
 
+    const chatCompletion1 = Date.now()
+    console.log({ chatCompletion1: chatCompletion1 - processAndVectorizeContent1 })
+
+
     for await (const chunk of chatCompletion) {
       if (chunk.choices[0].delta && chunk.choices[0].finish_reason !== "stop") {
         streamable.update({ 'llmResponse': chunk.choices[0].delta.content });
@@ -363,8 +381,13 @@ async function myAction(userMessage: string): Promise<any> {
 
     if (!config.useOllamaInference) {
       const followUp = await relevantQuestions(sources);
+      console.log({followUp})
       streamable.update({ 'followUp': followUp });
     }
+
+
+    const relevantQuestions1 = Date.now()
+    console.log({ relevantQuestions1: relevantQuestions1  - chatCompletion1})
 
     streamable.done({ status: 'done' });
   })();

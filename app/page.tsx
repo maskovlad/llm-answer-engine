@@ -148,6 +148,7 @@ export default function Page() {
     if (!message) return;
     await handleUserMessageSubmission(message);
   };
+
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     const messageToSend = inputValue.trim();
@@ -155,6 +156,7 @@ export default function Page() {
     setInputValue('');
     await handleSubmit(messageToSend);
   };
+
   const handleUserMessageSubmission = async (userMessage: string): Promise<void> => {
     console.log('handleUserMessageSubmission', userMessage);
     const newMessageId = Date.now();
@@ -270,11 +272,14 @@ export default function Page() {
           ))}
         </div>
       )}
+
+{/* Form */}
       <div className={`px-2 fixed inset-x-0 bottom-0 w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4 bring-to-front`}>
         <div className="mx-auto max-w-xl sm:px-4 ">
           {messages.length === 0 && (
             <InitialQueries questions={['How is apple\'s stock doing these days?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
           )}
+
           <form
             ref={formRef}
             onSubmit={async (e: FormEvent<HTMLFormElement>) => {
@@ -319,6 +324,7 @@ export default function Page() {
               </div>
             </div>
           </form>
+
         </div>
       </div>
       <div className="pb-[80px] pt-4 md:pt-10"></div>

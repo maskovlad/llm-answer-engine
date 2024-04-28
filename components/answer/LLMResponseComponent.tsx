@@ -47,7 +47,10 @@ const LLMResponseComponent = ({ llmResponse, currentLlmResponse, index }: LLMRes
                 </div>
             ) : (
                 // 7. If 'llmResponse' is empty, render the 'StreamingComponent' with 'currentLlmResponse'
-                <StreamingComponent currentLlmResponse={currentLlmResponse} />
+                <div>
+                    <StreamingComponent currentLlmResponse={currentLlmResponse} />
+                    Loading...
+                </div>
             )}
         </>
     );
