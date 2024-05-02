@@ -32,6 +32,12 @@ interface StreamMessage {
   places?: Place[];
   shopping?: Shopping[];
   ticker?: string;
+  settings: {
+    video: boolean;
+    image: boolean;
+    sources: boolean;
+    relevant: boolean;
+  }
 }
 interface Image {
   link: string;

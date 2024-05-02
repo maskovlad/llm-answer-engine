@@ -41,6 +41,14 @@ export default function Page() {
   const [messages, setMessages] = useState<Message[]>([]);
   // 6. Set up state for the CURRENT LLM response (for displaying in the UI while streaming)
   const [currentLlmResponse, setCurrentLlmResponse] = useState('');
+  //  user settings for responce
+  const [settings, setSettings] = useState({
+    video: true,
+    image: true,
+    sources: true,
+    relevant: true,
+  });
+
   // 7. Set up handler for when the user clicks on the follow up button
   const handleFollowUpClick = useCallback(async (question: string) => {
     setCurrentLlmResponse('');
@@ -138,6 +146,9 @@ export default function Page() {
             if (typedMessage.llmResponseEnd) {
               currentMessage.isStreaming = false;
             }
+            if (typedMessage.settings) {
+              setSettings(typedMessage.settings)
+            }
             if (typedMessage.searchResults) {
               currentMessage.searchResults = typedMessage.searchResults;
             }
@@ -195,7 +206,7 @@ export default function Page() {
                   <FinancialChart key={`financialChart-${index}`} ticker={message.ticker} />
                 )}
 
-                {message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
+                {settings.sources && message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
                 
                 {message.places && message.places.length > 0 && (
                   <MapComponent key={`map-${index}`} places={message.places} />
@@ -203,7 +214,7 @@ export default function Page() {
 
                 <LLMResponseComponent llmResponse={message.content} currentLlmResponse={currentLlmResponse} index={index} key={`llm-response-${index}`} />
 
-                {message.followUp && (
+                {settings.relevant && message.followUp && (
                   <div className="flex flex-col">
                     <FollowUpComponent key={`followUp-${index}`} followUp={message.followUp} handleFollowUpClick={handleFollowUpClick} />
                   </div>
@@ -213,8 +224,8 @@ export default function Page() {
               {/* Secondary content area */}
               <div className="w-full md:w-1/4 md:pl-2">
                 {message.shopping && message.shopping.length > 0 && <ShoppingComponent key={`shopping-${index}`} shopping={message.shopping} />}
-                {message.videos && <VideosComponent key={`videos-${index}`} videos={message.videos} />}
-                {message.images && <ImagesComponent key={`images-${index}`} images={message.images} />}
+                {settings.video && message.videos && <VideosComponent key={`videos-${index}`} videos={message.videos} />}
+                {settings.image && message.images && <ImagesComponent key={`images-${index}`} images={message.images} />}
                 {message.places && message.places.length > 0 && (
                   <MapDetails key={`map-${index}`} places={message.places} />
                 )}

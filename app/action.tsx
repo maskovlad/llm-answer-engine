@@ -336,6 +336,12 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     const endTranslate = Date.now()
     console.log({ endTranslate: endTranslate - start })
 
+    streamable.update({'settings': {
+      video: messageSettings.showVideo,
+      image: messageSettings.showImages,
+      relevant: messageSettings.showFollowup,
+    }})
+
     const [images, sources, videos /*,condtionalFunctionCallUI*/] = await Promise.all([
       messageSettings.showImages ? getImages(userMessage) : null,
       getSources(userMessage),
