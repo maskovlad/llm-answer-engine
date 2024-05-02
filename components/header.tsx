@@ -19,7 +19,7 @@ export function Header() {
         <span className="inline-flex items-center home-links whitespace-nowrap">
           <img className="h-[50px]" src={logo.src} />
           <a className='inline-flex' href="https://developersdigest.tech" rel="noopener" target="_blank">
-            <span className="block sm:inline text-lg sm:text-xl lg:text-2xl font-semibold dark:text-white text-black">NAIDA <span className="linear-wipe">ШІстема пошуку відповідей</span></span>
+            <span className="block sm:inline text-lg sm:text-xl lg:text-2xl font-semibold dark:text-white text-black">NAIDA <span className="linear-wipe">ШІстема пошуку відповідей (alpha)</span></span>
           </a>
         </span>
 

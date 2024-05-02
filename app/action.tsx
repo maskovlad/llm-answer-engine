@@ -320,7 +320,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     const start = Date.now()
     console.log({ start })
 
-    messageSettings.messageLang != 'en' 
+    messageSettings.messageLang != messageSettings.searchLang 
       ? userMessage = await translateText(message, messageSettings.messageLang, messageSettings.searchLang) as string 
       : null
     console.log({ translatadMessage: userMessage })
