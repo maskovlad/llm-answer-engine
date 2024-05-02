@@ -282,7 +282,15 @@ export async function getVideos(message: string): Promise<{ imageUrl: string, li
 
 // 9. Generate follow-up questions using OpenAI API
 // Генерування додаткових питань за допомогою  OpenAI API
-const relevantQuestions = async (sources: SearchResult[], inferenceModel: string): Promise<any> => {
+const relevantQuestions = async (sources: SearchResult[], inferenceModel: string, relevantLang: string): Promise<any> => {
+  const inTranslate = [
+    { lang: 'en', text: 'in english' },
+    { lang: 'uk', text: 'IN UKRAINIAN' },
+    { lang: 'ru', text: 'IN RUSSIAN' }
+  ]
+  const lang = inTranslate.find(value => value.lang === relevantLang)?.text
+  console.log({relevantLang: lang})
+
   return await openai.chat.completions.create({
     messages: [
       {
@@ -291,7 +299,7 @@ const relevantQuestions = async (sources: SearchResult[], inferenceModel: string
       },
       {
         role: "user",
-        content: `Generate follow-up questions based on the top results from a similarity search: ${JSON.stringify(sources)}. The original search query is: "The original search query".`,
+        content: `Generate follow-up questions ${lang} based on the top results from a similarity search: ${JSON.stringify(sources)}. The original search query is: "The original search query".`,
       },
     ],
     model: inferenceModel,
@@ -320,8 +328,8 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     const start = Date.now()
     console.log({ start })
 
-    messageSettings.messageLang != messageSettings.searchLang 
-      ? userMessage = await translateText(message, messageSettings.messageLang, messageSettings.searchLang) as string 
+    messageSettings.messageLang != messageSettings.searchLang
+      ? userMessage = await translateText(message, messageSettings.messageLang, messageSettings.searchLang) as string
       : null
     console.log({ translatadMessage: userMessage })
 
@@ -385,7 +393,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     }
 
     if (messageSettings.showFollowup) {
-      const followUp = await relevantQuestions(sources, messageSettings.inferenceModel);
+      const followUp = await relevantQuestions(sources, messageSettings.inferenceModel, messageSettings.messageLang);
       streamable.update({ 'followUp': followUp });
     }
 
