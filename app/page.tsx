@@ -26,83 +26,8 @@ import FinancialChart from '@/components/answer/FinancialChart';
 import { ArrowUp } from '@phosphor-icons/react';
 // OPTIONAL: Use Upstash rate limiting to limit the number of requests per user
 import RateLimit from '@/components/answer/RateLimit';
-
-// 2. Set up types
-interface SearchResult {
-  favicon: string;
-  link: string;
-  title: string;
-}
-interface Message {
-  id: number;
-  type: string;
-  content: string;
-  userMessage: string;
-  images: Image[];
-  videos: Video[];
-  followUp: FollowUp | null;
-  isStreaming: boolean;
-  searchResults?: SearchResult[];
-  conditionalFunctionCallUI?: any;
-  status?: string;
-  places?: Place[];
-  shopping?: Shopping[];
-  ticker?: string | undefined;
-}
-interface StreamMessage {
-  searchResults?: any;
-  userMessage?: string;
-  llmResponse?: string;
-  llmResponseEnd?: boolean;
-  images?: any;
-  videos?: any;
-  followUp?: any;
-  conditionalFunctionCallUI?: any;
-  status?: string;
-  places?: Place[];
-  shopping?: Shopping[];
-  ticker?: string;
-}
-interface Image {
-  link: string;
-}
-interface Video {
-  link: string;
-  imageUrl: string;
-}
-interface Place {
-  cid: React.Key | null | undefined;
-  latitude: number;
-  longitude: number;
-  title: string;
-  address: string;
-  rating: number;
-  category: string;
-  phoneNumber?: string;
-  website?: string;
-}
-interface FollowUp {
-  choices: {
-    message: {
-      content: string;
-    };
-  }[];
-}
-interface Shopping {
-  type: string;
-  title: string;
-  source: string;
-  link: string;
-  price: string;
-  shopping: any;
-  position: number;
-  delivery: string;
-  imageUrl: string;
-  rating: number;
-  ratingCount: number;
-  offers: string;
-  productId: string;
-}
+import { Message, MessageSettings, Place, SearchResult, Shopping, StreamMessage } from '@/types/types';
+import { defaultMessageSettings } from '@/lib/message-settings';
 
 
 export default function Page() {
@@ -175,16 +100,32 @@ export default function Page() {
       status: '',
       ticker: undefined,
     };
+
+    // читаємо налаштування запиту з local storage браузера
+    let messageSettings: MessageSettings
+    const storedSettings = localStorage.getItem('settings') 
+    if (storedSettings) {
+     messageSettings = JSON.parse(storedSettings) 
+    } else { 
+      messageSettings = defaultMessageSettings
+    }
+
     setMessages(prevMessages => [...prevMessages, newMessage]);
     let lastAppendedResponse = "";
+
     try {
-      const streamableValue = await myAction(userMessage);
+      // читаємо стрім з бекенда
+      const streamableValue = await myAction(userMessage, messageSettings);
+
       let llmResponseString = "";
+
       for await (const message of readStreamableValue(streamableValue)) {
         const typedMessage = message as StreamMessage;
+
         setMessages((prevMessages) => {
           const messagesCopy = [...prevMessages];
           const messageIndex = messagesCopy.findIndex(msg => msg.id === newMessageId);
+
           if (messageIndex !== -1) {
             const currentMessage = messagesCopy[messageIndex];
             if (typedMessage.status === 'rateLimitReached') {
@@ -210,19 +151,19 @@ export default function Page() {
               currentMessage.followUp = typedMessage.followUp;
             }
             // Optional Function Calling + Conditional UI
-            if (typedMessage.conditionalFunctionCallUI) {
-              const functionCall = typedMessage.conditionalFunctionCallUI;
-              if (functionCall.type === 'places') {
-                currentMessage.places = functionCall.places;
-              }
-              if (functionCall.type === 'shopping') {
-                currentMessage.shopping = functionCall.shopping;
-              }
-              if (functionCall.type === 'ticker') {
-                console.log('ticker', functionCall);
-                currentMessage.ticker = functionCall.data;
-              }
-            }
+            // if (typedMessage.conditionalFunctionCallUI) {
+            //   const functionCall = typedMessage.conditionalFunctionCallUI;
+            //   if (functionCall.type === 'places') {
+            //     currentMessage.places = functionCall.places;
+            //   }
+            //   if (functionCall.type === 'shopping') {
+            //     currentMessage.shopping = functionCall.shopping;
+            //   }
+            //   if (functionCall.type === 'ticker') {
+            //     console.log('ticker', functionCall);
+            //     currentMessage.ticker = functionCall.data;
+            //   }
+            // }
           }
           return messagesCopy;
         });
@@ -235,30 +176,40 @@ export default function Page() {
       console.error("Error streaming data for user message:", error);
     }
   };
+
+
   return (
     <div>
       {messages.length > 0 && (
         <div className="flex flex-col">
+
           {messages.map((message, index) => (
             <div key={`message-${index}`} className="flex flex-col md:flex-row">
               <div className="w-full md:w-3/4 md:pr-2">
+
                 {message.status && message.status === 'rateLimitReached' && <RateLimit />}
+
                 {message.type === 'userMessage' && <UserMessageComponent message={message.userMessage} />}
+
                 {message.ticker && message.ticker.length > 0 && (
                   <FinancialChart key={`financialChart-${index}`} ticker={message.ticker} />
                 )}
+
                 {message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
+                
                 {message.places && message.places.length > 0 && (
                   <MapComponent key={`map-${index}`} places={message.places} />
                 )}
-                <LLMResponseComponent llmResponse={message.content} currentLlmResponse={currentLlmResponse} index={index} key={`llm-response-${index}`}
-                />
+
+                <LLMResponseComponent llmResponse={message.content} currentLlmResponse={currentLlmResponse} index={index} key={`llm-response-${index}`} />
+
                 {message.followUp && (
                   <div className="flex flex-col">
                     <FollowUpComponent key={`followUp-${index}`} followUp={message.followUp} handleFollowUpClick={handleFollowUpClick} />
                   </div>
                 )}
               </div>
+
               {/* Secondary content area */}
               <div className="w-full md:w-1/4 md:pl-2">
                 {message.shopping && message.shopping.length > 0 && <ShoppingComponent key={`shopping-${index}`} shopping={message.shopping} />}
@@ -268,13 +219,14 @@ export default function Page() {
                   <MapDetails key={`map-${index}`} places={message.places} />
                 )}
               </div>
+
             </div>
           ))}
         </div>
       )}
 
 {/* Form */}
-      <div className={`px-2 fixed inset-x-0 bottom-0 w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4 bring-to-front`}>
+      <div className={`px-2 fixed inset-x-0 z-20 bottom-0 w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4`}>
         <div className="mx-auto max-w-xl sm:px-4 ">
           {messages.length === 0 && (
             <InitialQueries questions={['How is apple\'s stock doing these days?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
@@ -316,10 +268,10 @@ export default function Page() {
                   <TooltipTrigger asChild>
                     <Button type="submit" size="icon" disabled={inputValue === ''}>
                       <ArrowUp />
-                      <span className="sr-only">Send message</span>
+                      <span className="sr-only">Найда, шукай!</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Send message</TooltipContent>
+                  <TooltipContent>Найда, шукай!</TooltipContent>
                 </Tooltip>
               </div>
             </div>

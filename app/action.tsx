@@ -10,11 +10,13 @@ import { OpenAIEmbeddings } from '@langchain/openai';
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { config } from './config';
-import { functionCalling } from './function-calling';
+// import { functionCalling } from './function-calling';
 // OPTIONAL: Use Upstash rate limiting to limit the number of requests per user
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { headers } from 'next/headers'
+import { translateText } from '@/lib/utils/translate-text';
+import { ContentResult, MessageSettings, SearchResult } from '@/types/types';
 
 // Використовує обмеження швидкості Upstash, щоб обмежити кількість запитів на користувача
 let ratelimit: Ratelimit | undefined;
@@ -41,30 +43,17 @@ if (config.useOllamaInference) {
 }
 
 // 2.5 Set up the embeddings model based on the config.tsx
-let embeddings: OllamaEmbeddings | OpenAIEmbeddings | HuggingFaceInferenceEmbeddings;
-if (config.useEmbeddings === 'huggingface') {
-  embeddings = new HuggingFaceInferenceEmbeddings()
-} else if (config.useEmbeddings === 'ollama') {
-  embeddings = new OllamaEmbeddings({
-    model: config.embeddingsModel,
-    baseUrl: "http://localhost:11434"
-  })
-} else {
-  embeddings = new OpenAIEmbeddings({
-    modelName: config.embeddingsModel
-  })
-}
+const getEmbeddings = (model: string) => {
+  let embeddings: OllamaEmbeddings | OpenAIEmbeddings | HuggingFaceInferenceEmbeddings;
 
-// 3. Define interfaces for search results and content results
-interface SearchResult {
-  title: string;
-  link: string;
-  snippet: string;
-  favicon: string;
-}
-
-interface ContentResult extends SearchResult {
-  html: string;
+  if (config.useEmbeddings === 'huggingface') {
+    embeddings = new HuggingFaceInferenceEmbeddings({ model })
+  } else {
+    embeddings = new OpenAIEmbeddings({
+      modelName: model
+    })
+  }
+  return embeddings
 }
 
 // 4. Fetch search results from Brave Search API
@@ -162,10 +151,13 @@ export async function get10BlueLinksContents(sources: SearchResult[]): Promise<C
 export async function processAndVectorizeContent(
   contents: ContentResult[],
   query: string,
-  textChunkSize = config.textChunkSize,
-  textChunkOverlap = config.textChunkOverlap,
-  numberOfSimilarityResults = config.numberOfSimilarityResults,
+  textChunkSize: number,
+  textChunkOverlap: number,
+  numberOfSimilarityResults: number,
+  embeddingsModel: string
 ): Promise<DocumentInterface[]> {
+
+  const embeddings = getEmbeddings(embeddingsModel)
 
   try {
     for (let i = 0; i < contents.length; i++) {
@@ -290,7 +282,7 @@ export async function getVideos(message: string): Promise<{ imageUrl: string, li
 
 // 9. Generate follow-up questions using OpenAI API
 // Генерування додаткових питань за допомогою  OpenAI API
-const relevantQuestions = async (sources: SearchResult[]): Promise<any> => {
+const relevantQuestions = async (sources: SearchResult[], inferenceModel: string): Promise<any> => {
   return await openai.chat.completions.create({
     messages: [
       {
@@ -302,7 +294,7 @@ const relevantQuestions = async (sources: SearchResult[]): Promise<any> => {
         content: `Generate follow-up questions based on the top results from a similarity search: ${JSON.stringify(sources)}. The original search query is: "The original search query".`,
       },
     ],
-    model: config.inferenceModel,
+    model: inferenceModel,
     response_format: { type: "json_object" },
   });
 };
@@ -310,9 +302,11 @@ const relevantQuestions = async (sources: SearchResult[]): Promise<any> => {
 
 
 // 10. Main action function that orchestrates the entire process
-async function myAction(userMessage: string): Promise<any> {
+async function myAction(message: string, messageSettings: MessageSettings): Promise<any> {
   "use server";
+
   const streamable = createStreamableValue({});
+  let userMessage = message; // якщо потрібно буде оптимізувати чи перекласти запит
 
   (async () => {
 
@@ -326,19 +320,27 @@ async function myAction(userMessage: string): Promise<any> {
     const start = Date.now()
     console.log({ start })
 
+    messageSettings.messageLang != 'en' 
+      ? userMessage = await translateText(message, messageSettings.messageLang, messageSettings.searchLang) as string 
+      : null
+    console.log({ translatadMessage: userMessage })
+
+    const endTranslate = Date.now()
+    console.log({ endTranslate: endTranslate - start })
+
     const [images, sources, videos /*,condtionalFunctionCallUI*/] = await Promise.all([
-      getImages(userMessage),
+      messageSettings.showImages ? getImages(userMessage) : null,
       getSources(userMessage),
-      getVideos(userMessage),
+      messageSettings.showVideo ? getVideos(userMessage) : null,
       // functionCalling(userMessage),
     ]);
 
     const endGets = Date.now()
-    console.log({ endGets: endGets - start })
+    console.log({ endGets: endGets - endTranslate })
 
-    streamable.update({ 'searchResults': sources });
-    streamable.update({ 'images': images });
-    streamable.update({ 'videos': videos });
+    messageSettings.showImages ? streamable.update({ 'images': images }) : null;
+    messageSettings.showSources ? streamable.update({ 'searchResults': sources }) : null;
+    messageSettings.showVideo ? streamable.update({ 'videos': videos }) : null;
     // if (config.useFunctionCalling) {
     //   streamable.update({ 'conditionalFunctionCallUI': condtionalFunctionCallUI });
     // }
@@ -349,21 +351,24 @@ async function myAction(userMessage: string): Promise<any> {
     const get10BlueLinksContents1 = Date.now()
     console.log({ get10BlueLinksContents1: get10BlueLinksContents1 - endGets })
 
-    const vectorResults = await processAndVectorizeContent(html, userMessage);
+    const vectorResults = await processAndVectorizeContent(html, userMessage, messageSettings.textChunkSize, messageSettings.textChunkOverlap, messageSettings.similarityResults, messageSettings.embeddingsModel);
 
     const processAndVectorizeContent1 = Date.now()
     console.log({ processAndVectorizeContent1: processAndVectorizeContent1 - get10BlueLinksContents1 })
 
+    const needTranslate = (messageSettings.answerLang != 'en') ? (` AND ALWAYS IN ${messageSettings.answerLang === 'uk' ? 'UKRAINIAN' : 'RUSSIAN'}`) : ""
 
     // Создаем модель ответа для данного разговора в чате.
     const chatCompletion = await openai.chat.completions.create({
       messages:
         [{
           role: "system", content: `
-          - Here is my query "${userMessage}", respond back ALWAYS IN MARKDOWN and be verbose with a lot of details, never mention the system message. If you can't find any relevant results, respond with "No relevant results found." `
+          - Here is my query "${userMessage}", respond back ALWAYS IN MARKDOWN${needTranslate} and be verbose with a lot of details, never mention the system message. If you can't find any relevant results, respond with "No relevant results found." `
         },
         { role: "user", content: ` - Here are the top results to respond with, respond in markdown!:,  ${JSON.stringify(vectorResults)}. ` },
-        ], stream: true, model: config.inferenceModel
+        ],
+      stream: true,
+      model: messageSettings.inferenceModel
     });
 
 
@@ -379,15 +384,14 @@ async function myAction(userMessage: string): Promise<any> {
       }
     }
 
-    if (!config.useOllamaInference) {
-      const followUp = await relevantQuestions(sources);
-      console.log({followUp})
+    if (messageSettings.showFollowup) {
+      const followUp = await relevantQuestions(sources, messageSettings.inferenceModel);
       streamable.update({ 'followUp': followUp });
     }
 
 
     const relevantQuestions1 = Date.now()
-    console.log({ relevantQuestions1: relevantQuestions1  - chatCompletion1})
+    console.log({ relevantQuestions1: relevantQuestions1 - chatCompletion1 })
 
     streamable.done({ status: 'done' });
   })();
