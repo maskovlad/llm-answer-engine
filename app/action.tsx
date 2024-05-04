@@ -57,7 +57,7 @@ const getEmbeddings = (model: string) => {
 }
 
 // 4. Fetch search results from Brave Search API
-export async function getSources(message: string, numberOfPagesToScan = config.numberOfPagesToScan): Promise<SearchResult[]> {
+export async function getSourcesBrave(message: string, numberOfPagesToScan = config.numberOfPagesToScan): Promise<SearchResult[]> {
   try {
     const response = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(message)}&count=${numberOfPagesToScan}`, {
       headers: {
@@ -68,7 +68,7 @@ export async function getSources(message: string, numberOfPagesToScan = config.n
     });
 
     if (!response.ok) {
-      throw new Error(`Помилка HTTP до Brave Search API! Функція getSources: status: ${response.status}`);
+      throw new Error(`Помилка HTTP до Brave Search API! Функція getSourcesBrave: status: ${response.status}`);
     }
 
     const jsonResponse = await response.json();
@@ -233,9 +233,11 @@ export async function getImages(message: string): Promise<{ title: string; link:
 // 8. Fetch video search results from Google Serper API
 export async function getVideos(message: string): Promise<{ imageUrl: string, link: string }[] | null> {
   const url = 'https://google.serper.dev/videos';
+
   const data = JSON.stringify({
     "q": message
   });
+
   const requestOptions: RequestInit = {
     method: 'POST',
     headers: {
@@ -251,6 +253,7 @@ export async function getVideos(message: string): Promise<{ imageUrl: string, li
       throw new Error(`Відповідь мережі не ОК. Функція getVideos. Status: ${response.status}`);
     }
     const responseData = await response.json();
+
     const validLinks = await Promise.all(
       responseData.videos.map(async (video: any) => {
         const imageUrl = video.imageUrl;
@@ -270,10 +273,55 @@ export async function getVideos(message: string): Promise<{ imageUrl: string, li
         return null;
       })
     );
+
     const filteredLinks = validLinks.filter((link): link is { imageUrl: string, link: string } => link !== null);
     return filteredLinks.slice(0, 9);
   } catch (error) {
     console.error('Проблема запиту у функції getVideos::', error);
+    throw error;
+  }
+}
+
+// 8. Fetch search results from Google Serper API
+export async function getSourcesSerper(message: string, numberOfPagesToScan = config.numberOfPagesToScan): Promise<SearchResult[]> {
+  const url = 'https://google.serper.dev/search';
+
+  const data = JSON.stringify({
+    "q": message,
+    "num": numberOfPagesToScan,
+  });
+
+  const requestOptions: RequestInit = {
+    method: 'POST',
+    headers: {
+      'X-API-KEY': process.env.SERPER_API as string,
+      'Content-Type': 'application/json'
+    },
+    body: data
+  };
+
+  try {
+    const response = await fetch(url, requestOptions);
+    if (!response.ok) {
+      throw new Error(`Відповідь мережі не ОК. Функція getSourcesSerper. Status: ${response.status}`);
+    }
+    const jsonResponse = await response.json();
+
+    if (!jsonResponse.organic.length) {
+      throw new Error('Невірний формат відповіді Serper API');
+    }
+
+    const final = jsonResponse.organic.map((result: any): SearchResult => ({
+      title: result.title,
+      link: result.link,
+      snippet: result.snippet,
+      favicon: 'https://www.gstatic.com/devrel-devsite/prod/v7ec1cdbf90989ab082f30bf9b9cbe627804848c18b70d722062aeb6c6d8958b5/developers/images/favicon-new.png',
+    }));
+
+    return final;
+
+  } catch (error) {
+    console.error('Проблема запиту у функції getSourcesSerper::', error);
     throw error;
   }
 }
@@ -336,7 +384,12 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     const endTranslate = Date.now()
     console.log({ endTranslate: endTranslate - start })
 
+    // const sourcesSerper = await getSourcesSerper(userMessage)
+
+    // console.log({sourcesSerper })
+
     streamable.update({'settings': {
+      sources: messageSettings.showSources,
       video: messageSettings.showVideo,
       image: messageSettings.showImages,
       relevant: messageSettings.showFollowup,
@@ -344,7 +397,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
     const [images, sources, videos /*,condtionalFunctionCallUI*/] = await Promise.all([
       messageSettings.showImages ? getImages(userMessage) : null,
-      getSources(userMessage),
+      messageSettings.searchSystem === 'google' ? getSourcesSerper(userMessage, messageSettings.pagesToScan) : getSourcesBrave(userMessage, messageSettings.pagesToScan),
       messageSettings.showVideo ? getVideos(userMessage) : null,
       // functionCalling(userMessage),
     ]);
