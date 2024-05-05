@@ -1,3 +1,8 @@
+export interface GetLangResponse {
+  label: string;
+  score: number;
+}
+
 interface SearchResult {
   favicon: string;
   link: string;

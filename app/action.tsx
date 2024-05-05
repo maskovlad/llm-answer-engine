@@ -16,7 +16,7 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { headers } from 'next/headers'
 import { translateText } from '@/lib/utils/translate-text';
-import { ContentResult, MessageSettings, SearchResult } from '@/types/types';
+import { ContentResult, GetLangResponse, MessageSettings, SearchResult } from '@/types/types';
 
 // Використовує обмеження швидкості Upstash, щоб обмежити кількість запитів на користувача
 let ratelimit: Ratelimit | undefined;
@@ -42,7 +42,22 @@ if (config.useOllamaInference) {
   });
 }
 
-// 2.5 Set up the embeddings model based on the config.tsx
+
+async function getMessageLanguage(data: {inputs: string}) {
+  const response = await fetch(
+    "https://api-inference.huggingface.co/models/cis-lmu/glotlid",
+    {
+      headers: { Authorization: "Bearer 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" },
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+  const result = await response.json();
+  return result;
+}
+
+
+// 2.5 Set up the embeddings model based on the messageSettings
 const getEmbeddings = (model: string) => {
   let embeddings: OllamaEmbeddings | OpenAIEmbeddings | HuggingFaceInferenceEmbeddings;
 
@@ -376,18 +391,20 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     const start = Date.now()
     console.log({ start })
 
-    messageSettings.messageLang != messageSettings.searchLang
-      ? userMessage = await translateText(message, messageSettings.messageLang, messageSettings.searchLang) as string
+    // якщо автоматичне визначення мови, то визначаємо за допомогою моделі
+    const messageLanguageResponse: GetLangResponse[][] = messageSettings.messageLang === 'auto' ? await getMessageLanguage({ "inputs": message }) : [[{label: messageSettings.messageLang+'_'}]]
+    const messageLanguage: string = messageLanguageResponse[0][0].label.substring(0, 2) ||'en'
+
+    console.log({messageLanguage})
+
+    messageLanguage != messageSettings.searchLang 
+      ? userMessage = await translateText(message, messageLanguage, messageSettings.searchLang) as string
       : null
-    console.log({ translatadMessage: userMessage })
 
     const endTranslate = Date.now()
     console.log({ endTranslate: endTranslate - start })
 
-    // const sourcesSerper = await getSourcesSerper(userMessage)
-
-    // console.log({sourcesSerper })
-
+// передаємо на клієнтські компоненти налаштування
     streamable.update({'settings': {
       sources: messageSettings.showSources,
       video: messageSettings.showVideo,
