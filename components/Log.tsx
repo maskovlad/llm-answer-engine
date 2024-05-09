@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const Log = ({ text, isOpen  }: { text: string[], isOpen: boolean, /*onClose: any, clear: any */}) => {
+const Log = ({ text, isOpen, clear  }: { text: string[], isOpen: boolean, clear: any }) => {
 
   return (
     <div
@@ -11,7 +11,7 @@ const Log = ({ text, isOpen  }: { text: string[], isOpen: boolean, /*onClose: an
          if (index % 2) return (<p key={`text-${index}`}>{item}</p>)
       })}
 
-      {/* <div className={`shadow-lg fixed bottom-[0vh] left-0 `}>
+      <div className={`shadow-lg fixed bottom-[0vh] left-0 `}>
         <button
           onClick={clear}
           className="text-white hover:text-gray-600 focus:outline-none"
@@ -20,7 +20,7 @@ const Log = ({ text, isOpen  }: { text: string[], isOpen: boolean, /*onClose: an
             <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm5.757-1a1 1 0 1 0 0 2h8.486a1 1 0 1 0 0-2H7.757Z" clipRule="evenodd"></path>
           </svg>
         </button>
-      </div> */}
+      </div>
 
     </div>
   );

@@ -213,9 +213,9 @@ export default function Page() {
   const toggleLogSidebar = () => {
     setShowLog(!showLog);
   };
-  // const clearLog = () => {
-  //   setLog([])
-  // }
+  const clearLog = () => {
+    setLog([])
+  }
 
 console.log(log)
   return (
@@ -230,7 +230,7 @@ console.log(log)
           Log
         </button>
       </div>
-      <Log text={log} isOpen={showLog} />
+      <Log text={log} isOpen={showLog} clear={clearLog} />
 
       <Toast.Provider swipeDirection="right">
         {/* <button
