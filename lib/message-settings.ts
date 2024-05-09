@@ -19,4 +19,5 @@ export const defaultMessageSettings: MessageSettings = {
   textChunkOverlap: 400,
   similarityResults: 4,
   pagesToScan: 10,
+  timeoutGetBlueLinks: 800,
 }
