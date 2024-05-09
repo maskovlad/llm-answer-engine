@@ -1,14 +1,6 @@
 import { HfInference } from '@huggingface/inference';
-import { TranslationOutputValue } from '@huggingface/inference';
 
-// export interface TranslationOutputValue {
-//   /**
-//    * The string after translation
-//    */
-//   translation_text: string;
-// }
-
-export async function translateText(inputText: string, sourceLanguage?: string, targetLanguage?: string): Promise <string | string[]> {
+export async function translateText(inputText: string, sourceLanguage?: string, targetLanguage?: string): Promise <string> {
   const hf = new HfInference(process.env.HUGGINGFACEHUB_API_KEY);
 
   const model = 'Helsinki-NLP/opus-mt-'+sourceLanguage+'-'+targetLanguage

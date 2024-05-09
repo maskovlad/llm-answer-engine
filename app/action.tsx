@@ -43,17 +43,27 @@ if (config.useOllamaInference) {
 }
 
 
-async function getMessageLanguage(data: {inputs: string}) {
-  const response = await fetch(
-    "https://api-inference.huggingface.co/models/cis-lmu/glotlid",
-    {
-      headers: { Authorization: "Bearer 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" },
-      method: "POST",
-      body: JSON.stringify(data),
+async function getMessageLanguage(data: { inputs: string }) {
+  try {
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/cis-lmu/glotlid",
+      {
+        headers: { Authorization: "Bearer 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" },
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+    const result: GetLangResponse[][] = await response.json();
+    console.log({ 'Визначення мови: ': JSON.stringify(result) })
+    const final = result[0][0].label.substring(0, 2)
+    if (!final) {
+      return 'no'
     }
-  );
-  const result = await response.json();
-  return result;
+    return final
+  } catch (err) {
+    console.log('Помилка визначення мови запиту, функція getMessageLanguage:', err)
+    return 'no'
+  }
 }
 
 
@@ -109,9 +119,9 @@ export async function getSourcesBrave(message: string, numberOfPagesToScan = con
 
 
 // 5. Fetch contents of top 10 search results
-export async function get10BlueLinksContents(sources: SearchResult[]): Promise<ContentResult[]> {
+export async function get10BlueLinksContents(sources: SearchResult[], timeout = 800): Promise<ContentResult[]> {
 
-  async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 800): Promise<Response> {
+  async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout: number): Promise<Response> {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -139,7 +149,7 @@ export async function get10BlueLinksContents(sources: SearchResult[]): Promise<C
 
   const promises = sources.map(async (source): Promise<ContentResult | null> => {
     try {
-      const response = await fetchWithTimeout(source.link, {}, 800);
+      const response = await fetchWithTimeout(source.link, {}, timeout);
       if (!response.ok) {
         throw new Error(`Невдалий запит в ф-ції get10BlueLinksContents ${source.link}. Status: ${response.status}`);
       }
@@ -298,7 +308,7 @@ export async function getVideos(message: string): Promise<{ imageUrl: string, li
 }
 
 // 8. Fetch search results from Google Serper API
-export async function getSourcesSerper(message: string, numberOfPagesToScan = config.numberOfPagesToScan): Promise<SearchResult[]> {
+export async function getSourcesSerper(message: string, locale: string, numberOfPagesToScan = config.numberOfPagesToScan): Promise<SearchResult[]> {
   const url = 'https://google.serper.dev/search';
 
   const data = JSON.stringify({
@@ -352,7 +362,7 @@ const relevantQuestions = async (sources: SearchResult[], inferenceModel: string
     { lang: 'ru', text: 'IN RUSSIAN' }
   ]
   const lang = inTranslate.find(value => value.lang === relevantLang)?.text
-  console.log({relevantLang: lang})
+  console.log({ relevantLang: lang })
 
   return await openai.chat.completions.create({
     messages: [
@@ -378,6 +388,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
   const streamable = createStreamableValue({});
   let userMessage = message; // якщо потрібно буде оптимізувати чи перекласти запит
+  const { showImages, showVideo, answerLang, embeddingsModel, messageLang, inferenceModel, pagesToScan, searchLang, searchSystem, showFollowup, showSources, similarityResults, textChunkOverlap, messageOptimization, textChunkSize, timeoutGetBlueLinks } = messageSettings;
 
   (async () => {
 
@@ -388,59 +399,71 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
         return streamable.done({ 'status': 'rateLimitReached' });
       }
     }
+
     const start = Date.now()
     console.log({ start })
+    streamable.update({ 'log': 'start: ' + start })
 
     // якщо автоматичне визначення мови, то визначаємо за допомогою моделі
-    const messageLanguageResponse: GetLangResponse[][] = messageSettings.messageLang === 'auto' ? await getMessageLanguage({ "inputs": message }) : [[{label: messageSettings.messageLang+'_'}]]
-    const messageLanguage: string = messageLanguageResponse[0][0].label.substring(0, 2) ||'en'
+    // const messageLanguage = messageLang === 'auto'
+    //   ? await getMessageLanguage({ "inputs": message })
+    //   : messageLang
+    const questionLanguage = messageLang
+    // console.log({ messageLanguage })
+    // streamable.update({ 'log': 'messageLanguage: ' + messageLanguage });
 
-    console.log({messageLanguage})
-
-    messageLanguage != messageSettings.searchLang 
-      ? userMessage = await translateText(message, messageLanguage, messageSettings.searchLang) as string
-      : null
+    if (questionLanguage != searchLang) {
+      userMessage = await translateText(message, questionLanguage, searchLang)
+      streamable.update({'log': `Translated question: ${userMessage}`})
+    }
 
     const endTranslate = Date.now()
     console.log({ endTranslate: endTranslate - start })
+    streamable.update({ 'log': 'endTranslate: ' + (endTranslate - start) })
 
-// передаємо на клієнтські компоненти налаштування
-    streamable.update({'settings': {
-      sources: messageSettings.showSources,
-      video: messageSettings.showVideo,
-      image: messageSettings.showImages,
-      relevant: messageSettings.showFollowup,
-    }})
+    // передаємо на клієнтські компоненти налаштування
+    streamable.update({
+      'settings': {
+        sources: showSources,
+        video: showVideo,
+        image: showImages,
+        relevant: showFollowup,
+      }
+    })
 
     const [images, sources, videos /*,condtionalFunctionCallUI*/] = await Promise.all([
-      messageSettings.showImages ? getImages(userMessage) : null,
-      messageSettings.searchSystem === 'google' ? getSourcesSerper(userMessage, messageSettings.pagesToScan) : getSourcesBrave(userMessage, messageSettings.pagesToScan),
-      messageSettings.showVideo ? getVideos(userMessage) : null,
+      showImages ? getImages(userMessage) : null,
+      searchSystem === 'google' ? getSourcesSerper(userMessage, searchLang, pagesToScan) : getSourcesBrave(userMessage, pagesToScan),
+      showVideo ? getVideos(userMessage) : null,
       // functionCalling(userMessage),
     ]);
 
     const endGets = Date.now()
     console.log({ endGets: endGets - endTranslate })
+    streamable.update({ 'log': 'endGets: ' + (endGets - endTranslate) })
 
-    messageSettings.showImages ? streamable.update({ 'images': images }) : null;
-    messageSettings.showSources ? streamable.update({ 'searchResults': sources }) : null;
-    messageSettings.showVideo ? streamable.update({ 'videos': videos }) : null;
+
+    showImages ? streamable.update({ 'images': images }) : null;
+    showSources ? streamable.update({ 'searchResults': sources }) : null;
+    showVideo ? streamable.update({ 'videos': videos }) : null;
     // if (config.useFunctionCalling) {
     //   streamable.update({ 'conditionalFunctionCallUI': condtionalFunctionCallUI });
     // }
 
-    const html = await get10BlueLinksContents(sources);
+    const html = await get10BlueLinksContents(sources, timeoutGetBlueLinks);
 
 
     const get10BlueLinksContents1 = Date.now()
     console.log({ get10BlueLinksContents1: get10BlueLinksContents1 - endGets })
+    streamable.update({ 'log': 'get10BlueLinksContents: ' + (get10BlueLinksContents1-endGets) })
 
-    const vectorResults = await processAndVectorizeContent(html, userMessage, messageSettings.textChunkSize, messageSettings.textChunkOverlap, messageSettings.similarityResults, messageSettings.embeddingsModel);
+    const vectorResults = await processAndVectorizeContent(html, userMessage, textChunkSize, textChunkOverlap, similarityResults, embeddingsModel);
 
     const processAndVectorizeContent1 = Date.now()
     console.log({ processAndVectorizeContent1: processAndVectorizeContent1 - get10BlueLinksContents1 })
+    streamable.update({ 'log': 'processAndVectorizeContent: ' + (processAndVectorizeContent1-get10BlueLinksContents1) })
 
-    const needTranslate = (messageSettings.answerLang != 'en') ? (` AND ALWAYS IN ${messageSettings.answerLang === 'uk' ? 'UKRAINIAN' : 'RUSSIAN'}`) : ""
+    const needTranslate = (answerLang != 'en') ? (` AND ALWAYS IN ${answerLang === 'uk' ? 'UKRAINIAN' : 'RUSSIAN'}`) : " AND ALWAYS IN ENGLISH"
 
     // Создаем модель ответа для данного разговора в чате.
     const chatCompletion = await openai.chat.completions.create({
@@ -452,12 +475,13 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
         { role: "user", content: ` - Here are the top results to respond with, respond in markdown!:,  ${JSON.stringify(vectorResults)}. ` },
         ],
       stream: true,
-      model: messageSettings.inferenceModel
+      model: inferenceModel
     });
 
 
     const chatCompletion1 = Date.now()
     console.log({ chatCompletion1: chatCompletion1 - processAndVectorizeContent1 })
+    streamable.update({ 'log': 'chatCompletion: ' + (chatCompletion1 - processAndVectorizeContent1) })
 
 
     for await (const chunk of chatCompletion) {
@@ -468,14 +492,16 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       }
     }
 
-    if (messageSettings.showFollowup) {
-      const followUp = await relevantQuestions(sources, messageSettings.inferenceModel, messageSettings.messageLang);
+    if (showFollowup) {
+      const followUp = await relevantQuestions(sources, inferenceModel, messageLang);
       streamable.update({ 'followUp': followUp });
     }
 
 
     const relevantQuestions1 = Date.now()
     console.log({ relevantQuestions1: relevantQuestions1 - chatCompletion1 })
+    streamable.update({ 'log': 'relevantQuestions: ' + (relevantQuestions1 - chatCompletion1) })
+    streamable.update({ 'log': 'Час запиту: ' + (relevantQuestions1 - start) + '\n'})
 
     streamable.done({ status: 'done' });
   })();

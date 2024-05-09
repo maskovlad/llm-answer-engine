@@ -61,7 +61,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
         </div>
 
         <div className="flex-1 px-4 py-6 overflow-y-auto">
-
+{/* Мова Запиту */}
           <div className="my-4">
             <label className="block mb-2 font-semibold">Мова Запиту</label>
             <select
@@ -69,13 +69,12 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
               onChange={(e) => handleSettingsChange('messageLang', e.target.value)}
               className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             >
-              <option value="auto">Авто</option>
               <option value="uk">Українська</option>
               <option value="ru">Русский</option>
               <option value="en">English</option>
             </select>
           </div>
-
+{/* Мова пошуку */}
           <div className="my-4">
             <label className="block mb-2 font-semibold">Мова пошуку</label>
             <select
@@ -88,7 +87,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
               <option value="en">English</option>
             </select>
           </div>
-
+{/* Мова відповіді */}
           <div className="my-4">
             <label className="block mb-2 font-semibold">Мова відповіді</label>
             <select
@@ -103,7 +102,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
           </div>
 
           <hr />
-
+{/* Пошукова система */}
           <div className="my-4">
             <label className="block mb-2 font-semibold">Пошукова система</label>
             <select
@@ -119,7 +118,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
 
           <hr />
 
-
+{/* Embeddings Model */}
           <div className="my-4">
             <label className="block mb-2 font-semibold">Embeddings Model</label>
             <select
@@ -130,9 +129,10 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
               <option value="sentence-transformers/all-MiniLM-L6-v2">all-MiniLM-L6-v2(en)</option>
               <option value="uaritm/multilingual_en_uk_pl_ru">multilingual_en_uk_pl_ru</option>
               <option value="sentence-transformers/all-mpnet-base-v2">all-mpnet-base-v2</option>
+              <option value="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2">paraphrase-multilingual-MiniLM-L12-v2</option>
             </select>
           </div>
-
+{/* Inference Model */}
           <div className="my-4">
             <label className="block mb-2 font-semibold">Inference Model</label>
             <select
@@ -161,7 +161,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
               <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Посилання</span>
             </label>
           </div>
-
+{/* Зображення */}
           <div className="my-4">
             <label className="inline-flex items-center cursor-pointer">
               <input type="checkbox"
@@ -172,7 +172,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
               <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Зображення</span>
             </label>
           </div>
-
+{/* Відео */}
           <div className="my-4">
             <label className="inline-flex items-center cursor-pointer">
               <input type="checkbox"
@@ -183,7 +183,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
               <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Відео</span>
             </label>
           </div>
-
+{/* Дод. питання */}
           <div className="my-4">
             <label className="inline-flex items-center cursor-pointer">
               <input type="checkbox"
@@ -199,7 +199,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
 
           <div className="my-4">
             <h3 className="mb-2 font-semibold">Розширені опції (Pro)</h3>
-
+{/* Оптимізація запит */}
             <div className="my-4">
               <label className="block mb-4 font-semibold">Оптимізація запиту</label>
               <label className="inline-flex items-center cursor-pointer">
@@ -210,7 +210,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
                 <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
               </label>
             </div>
-
+{/* Text Chunk Size */}
             <div className="mb-4">
               <label className="block mb-2 font-semibold">
                 Text Chunk Size: {settings.textChunkSize}
@@ -225,7 +225,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
             </div>
-
+{/* Text Chunk Overlap */}
             <div className="mb-4">
               <label className="block mb-2 font-semibold">
                 Text Chunk Overlap: {settings.textChunkOverlap}
@@ -240,7 +240,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
             </div>
-
+{/* Number of Similarity Results */}
             <div className="mb-4">
               <label className="block mb-2 font-semibold">
                 Number of Similarity Results: {settings.similarityResults}
@@ -255,7 +255,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
             </div>
-
+{/* Number of Pages to Scan */}
             <div className="mb-4">
               <label className="block mb-2 font-semibold">
                 Number of Pages to Scan: {settings.pagesToScan}
@@ -267,6 +267,21 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
                 step="1"
                 value={settings.pagesToScan}
                 onChange={(e) => handleSettingsChange('pagesToScan', Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+{/*Таймаут сканування посилань */}
+            <div className="mb-4">
+              <label className="block mb-2 font-semibold">
+                Таймаут сканування посилань(ms): {settings.timeoutGetBlueLinks}
+              </label>
+              <input
+                type="range"
+                min="800"
+                max="2000"
+                step="100"
+                value={settings.timeoutGetBlueLinks}
+                onChange={(e) => handleSettingsChange('timeoutGetBlueLinks', Number(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
             </div>

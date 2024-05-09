@@ -43,6 +43,7 @@ interface StreamMessage {
     sources: boolean;
     relevant: boolean;
   }
+  log: string;
 }
 interface Image {
   link: string;
@@ -111,6 +112,7 @@ export interface MessageSettings {
   textChunkOverlap: number;
   similarityResults: number;
   pagesToScan: number;
+  timeoutGetBlueLinks: number;
 }
 
 // 3. Define interfaces for search results and content results

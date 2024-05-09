@@ -28,6 +28,8 @@ import { ArrowUp } from '@phosphor-icons/react';
 import RateLimit from '@/components/answer/RateLimit';
 import { Message, MessageSettings, Place, SearchResult, Shopping, StreamMessage } from '@/types/types';
 import { defaultMessageSettings } from '@/lib/message-settings';
+import Log from '@/components/Log';
+import * as Toast from '@radix-ui/react-toast';
 
 
 export default function Page() {
@@ -48,6 +50,15 @@ export default function Page() {
     sources: true,
     relevant: true,
   });
+  const [log, setLog] = useState<string[]>([]);
+  const [showLog, setShowLog] = useState(false);
+  const [openToast, setOpenToast] = useState(false);
+
+  // const updateString = (index: number, newString: string) => {
+  //   console.log(`newString: ${newString}`)
+  //   setLog([...log, newString] )
+  // };
+  
 
   // 7. Set up handler for when the user clicks on the follow up button
   const handleFollowUpClick = useCallback(async (question: string) => {
@@ -111,10 +122,10 @@ export default function Page() {
 
     // читаємо налаштування запиту з local storage браузера
     let messageSettings: MessageSettings
-    const storedSettings = localStorage.getItem('settings') 
+    const storedSettings = localStorage.getItem('settings')
     if (storedSettings) {
-     messageSettings = JSON.parse(storedSettings) 
-    } else { 
+      messageSettings = JSON.parse(storedSettings)
+    } else {
       messageSettings = defaultMessageSettings
     }
 
@@ -130,6 +141,7 @@ export default function Page() {
       for await (const message of readStreamableValue(streamableValue)) {
         const typedMessage = message as StreamMessage;
 
+        // ОТРИМАННЯ ДАНИХ
         setMessages((prevMessages) => {
           const messagesCopy = [...prevMessages];
           const messageIndex = messagesCopy.findIndex(msg => msg.id === newMessageId);
@@ -148,6 +160,15 @@ export default function Page() {
             }
             if (typedMessage.settings) {
               setSettings(typedMessage.settings)
+            }
+            if (typedMessage.log) {
+              // const newArr = []
+              // newArr.push(...log,typedMessage.log)
+              // log.push(typedMessage.log)
+              // console.log({newArr})
+              // console.log({log})
+              setLog(prev => [...prev, typedMessage.log])
+              // updateString(log.length, typedMessage.log)
             }
             if (typedMessage.searchResults) {
               currentMessage.searchResults = typedMessage.searchResults;
@@ -188,9 +209,47 @@ export default function Page() {
     }
   };
 
+  // LOG
+  const toggleLogSidebar = () => {
+    setShowLog(!showLog);
+  };
+  // const clearLog = () => {
+  //   setLog([])
+  // }
 
+console.log(log)
   return (
     <div>
+
+      {/* LOG */}
+      <div className={`shadow-lg transition-transform duration-300 ease-in-out transform ${!showLog ? '-translate-x-[262px]' : 'translate-x-0'} knopka fixed bottom-[0vh] left-[262px] `}>
+        <button
+          onClick={toggleLogSidebar}
+          className="text-gray-500 hover:text-gray-600 focus:outline-none"
+        >
+          Log
+        </button>
+      </div>
+      <Log text={log} isOpen={showLog} />
+
+      <Toast.Provider swipeDirection="right">
+        {/* <button
+          className="inline-flex items-center justify-center rounded font-medium text-[15px] px-[15px] leading-[35px] h-[35px] bg-white text-violet11 shadow-[0_2px_10px] shadow-blackA4 outline-none hover:bg-mauve3 focus:shadow-[0_0_0_2px] focus:shadow-black"
+          onClick={() => {
+            setOpenToast(false);
+          }}
+        >
+          Close
+        </button> */}
+        <Toast.Root className="bg-green rounded-md shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] p-[15px] grid [grid-template-areas:_'title_action'_'description_action'] grid-cols-[auto_max-content] gap-x-[15px] items-center data-[state=open]:animate-slideIn data-[state=closed]:animate-hide data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out] data-[swipe=end]:animate-swipeOut"
+          open={openToast}
+          onOpenChange={setOpenToast}>
+          <Toast.Title className="[grid-area:_title] mb-[5px] font-medium text-slate12 text-[15px]">Title</Toast.Title> 
+        </Toast.Root>
+        <Toast.Viewport className="[--viewport-padding:_25px] fixed bottom-0 right-0 flex flex-col p-[var(--viewport-padding)] gap-[10px] w-[390px] max-w-[100vw] m-0 list-none z-[2147483647] outline-none" />
+      </Toast.Provider>
+
+
       {messages.length > 0 && (
         <div className="flex flex-col">
 
@@ -207,7 +266,7 @@ export default function Page() {
                 )}
 
                 {settings.sources && message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
-                
+
                 {message.places && message.places.length > 0 && (
                   <MapComponent key={`map-${index}`} places={message.places} />
                 )}
@@ -236,7 +295,7 @@ export default function Page() {
         </div>
       )}
 
-{/* Form */}
+      {/* Form */}
       <div className={`px-2 fixed inset-x-0 z-20 bottom-0 w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4`}>
         <div className="mx-auto max-w-xl sm:px-4 ">
           {messages.length === 0 && (
