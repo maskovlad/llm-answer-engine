@@ -16,7 +16,7 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { headers } from 'next/headers'
 import { translateText } from '@/lib/utils/translate-text';
-import { ContentResult, GetLangResponse, MessageSettings, SearchResult } from '@/types/types';
+import { ContentResult, GetLangResponse, MessageSettings, SearchResult, ServerLog } from '@/types/types';
 
 // Використовує обмеження швидкості Upstash, щоб обмежити кількість запитів на користувача
 let ratelimit: Ratelimit | undefined;
@@ -380,8 +380,6 @@ const relevantQuestions = async (sources: SearchResult[], inferenceModel: string
   });
 };
 
-
-
 // 10. Main action function that orchestrates the entire process
 async function myAction(message: string, messageSettings: MessageSettings): Promise<any> {
   "use server";
@@ -402,7 +400,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
     const start = Date.now()
     console.log({ start })
-    streamable.update({ 'log': 'start: ' + start })
+    streamable.update({ 'log': { title: 'Початок запиту: ', time: start, percent: 10 } })
 
     // якщо автоматичне визначення мови, то визначаємо за допомогою моделі
     // const messageLanguage = messageLang === 'auto'
@@ -414,12 +412,12 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
     if (questionLanguage != searchLang) {
       userMessage = await translateText(message, questionLanguage, searchLang)
-      streamable.update({'log': `Translated question: ${userMessage}`})
+      streamable.update({ 'log': { title: `Перекладений запит: ${userMessage}`, time: userMessage, percent: 20 } })
     }
 
     const endTranslate = Date.now()
     console.log({ endTranslate: endTranslate - start })
-    streamable.update({ 'log': 'endTranslate: ' + (endTranslate - start) })
+    streamable.update({ 'log': { title: 'Шукаю інформацію по твоєму запиту: ', time: (endTranslate - start), percent: 30 } })
 
     // передаємо на клієнтські компоненти налаштування
     streamable.update({
@@ -440,7 +438,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
     const endGets = Date.now()
     console.log({ endGets: endGets - endTranslate })
-    streamable.update({ 'log': 'endGets: ' + (endGets - endTranslate) })
+    streamable.update({ 'log': { title: 'Отримую тексти сторінок: ', time: (endGets - endTranslate), percent: 40 } })
 
 
     showImages ? streamable.update({ 'images': images }) : null;
@@ -455,13 +453,13 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
     const get10BlueLinksContents1 = Date.now()
     console.log({ get10BlueLinksContents1: get10BlueLinksContents1 - endGets })
-    streamable.update({ 'log': 'get10BlueLinksContents: ' + (get10BlueLinksContents1-endGets) })
+    streamable.update({ 'log': { title: 'Векторізую тексти: ', time: (get10BlueLinksContents1 - endGets), percent: 50 } })
 
     const vectorResults = await processAndVectorizeContent(html, userMessage, textChunkSize, textChunkOverlap, similarityResults, embeddingsModel);
 
     const processAndVectorizeContent1 = Date.now()
     console.log({ processAndVectorizeContent1: processAndVectorizeContent1 - get10BlueLinksContents1 })
-    streamable.update({ 'log': 'processAndVectorizeContent: ' + (processAndVectorizeContent1-get10BlueLinksContents1) })
+    streamable.update({ 'log': { title: 'Відповідаю: ', time: (processAndVectorizeContent1 - get10BlueLinksContents1), percent: 70 } })
 
     const needTranslate = (answerLang != 'en') ? (` AND ALWAYS IN ${answerLang === 'uk' ? 'UKRAINIAN' : 'RUSSIAN'}`) : " AND ALWAYS IN ENGLISH"
 
@@ -479,9 +477,8 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     });
 
 
-    const chatCompletion1 = Date.now()
-    console.log({ chatCompletion1: chatCompletion1 - processAndVectorizeContent1 })
-    streamable.update({ 'log': 'chatCompletion: ' + (chatCompletion1 - processAndVectorizeContent1) })
+        const chatCompletion1 = Date.now()
+        console.log({ chatCompletion1: chatCompletion1 - processAndVectorizeContent1 })
 
 
     for await (const chunk of chatCompletion) {
@@ -489,6 +486,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
         streamable.update({ 'llmResponse': chunk.choices[0].delta.content });
       } else if (chunk.choices[0].finish_reason === "stop") {
         streamable.update({ 'llmResponseEnd': true });
+        streamable.update({ 'log': { title: 'Кінець відповіді: ', time: (chatCompletion1 - processAndVectorizeContent1), percent: 0 } })
       }
     }
 
@@ -500,8 +498,8 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
     const relevantQuestions1 = Date.now()
     console.log({ relevantQuestions1: relevantQuestions1 - chatCompletion1 })
-    streamable.update({ 'log': 'relevantQuestions: ' + (relevantQuestions1 - chatCompletion1) })
-    streamable.update({ 'log': 'Час запиту: ' + (relevantQuestions1 - start) + '\n'})
+    streamable.update({ 'log': { title: 'relevantQuestions: ', time: (relevantQuestions1 - chatCompletion1), percent: 0 } })
+    streamable.update({ 'log': { title: 'Час запиту: ', time: (relevantQuestions1 - start), percent: 0 } })
 
     streamable.done({ status: 'done' });
   })();

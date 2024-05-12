@@ -26,10 +26,11 @@ import FinancialChart from '@/components/answer/FinancialChart';
 import { ArrowUp } from '@phosphor-icons/react';
 // OPTIONAL: Use Upstash rate limiting to limit the number of requests per user
 import RateLimit from '@/components/answer/RateLimit';
-import { Message, MessageSettings, Place, SearchResult, Shopping, StreamMessage } from '@/types/types';
+import { Message, MessageSettings, Place, SearchResult, ServerLog, Shopping, StreamMessage } from '@/types/types';
 import { defaultMessageSettings } from '@/lib/message-settings';
 import Log from '@/components/Log';
 import * as Toast from '@radix-ui/react-toast';
+import * as Progress from '@radix-ui/react-progress';
 
 
 export default function Page() {
@@ -50,15 +51,16 @@ export default function Page() {
     sources: true,
     relevant: true,
   });
-  const [log, setLog] = useState<string[]>([]);
+  const [log, setLog] = useState<ServerLog[]>([]);
   const [showLog, setShowLog] = useState(false);
   const [openToast, setOpenToast] = useState(false);
+  const [progress, setProgress] = useState<number>(0)
 
   // const updateString = (index: number, newString: string) => {
   //   console.log(`newString: ${newString}`)
   //   setLog([...log, newString] )
   // };
-  
+
 
   // 7. Set up handler for when the user clicks on the follow up button
   const handleFollowUpClick = useCallback(async (question: string) => {
@@ -103,6 +105,7 @@ export default function Page() {
 
   const handleUserMessageSubmission = async (userMessage: string): Promise<void> => {
     console.log('handleUserMessageSubmission', userMessage);
+    setProgress(10)
     const newMessageId = Date.now();
     const newMessage = {
       id: newMessageId,
@@ -132,8 +135,8 @@ export default function Page() {
     setMessages(prevMessages => [...prevMessages, newMessage]);
     let lastAppendedResponse = "";
 
+    // читаємо стрім з бекенда
     try {
-      // читаємо стрім з бекенда
       const streamableValue = await myAction(userMessage, messageSettings);
 
       let llmResponseString = "";
@@ -167,7 +170,8 @@ export default function Page() {
               // log.push(typedMessage.log)
               // console.log({newArr})
               // console.log({log})
-              setLog(prev => [...prev, typedMessage.log])
+              setLog(log => [...log, typedMessage.log])
+              setProgress(typedMessage.log.percent)
               // updateString(log.length, typedMessage.log)
             }
             if (typedMessage.searchResults) {
@@ -206,6 +210,8 @@ export default function Page() {
       }
     } catch (error) {
       console.error("Error streaming data for user message:", error);
+    } finally {
+      setProgress(0)
     }
   };
 
@@ -217,7 +223,7 @@ export default function Page() {
     setLog([])
   }
 
-console.log(log)
+  console.log(log)
   return (
     <div>
 
@@ -244,7 +250,7 @@ console.log(log)
         <Toast.Root className="bg-green rounded-md shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] p-[15px] grid [grid-template-areas:_'title_action'_'description_action'] grid-cols-[auto_max-content] gap-x-[15px] items-center data-[state=open]:animate-slideIn data-[state=closed]:animate-hide data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out] data-[swipe=end]:animate-swipeOut"
           open={openToast}
           onOpenChange={setOpenToast}>
-          <Toast.Title className="[grid-area:_title] mb-[5px] font-medium text-slate12 text-[15px]">Title</Toast.Title> 
+          <Toast.Title className="[grid-area:_title] mb-[5px] font-medium text-slate12 text-[15px]">Title</Toast.Title>
         </Toast.Root>
         <Toast.Viewport className="[--viewport-padding:_25px] fixed bottom-0 right-0 flex flex-col p-[var(--viewport-padding)] gap-[10px] w-[390px] max-w-[100vw] m-0 list-none z-[2147483647] outline-none" />
       </Toast.Provider>
@@ -317,33 +323,57 @@ console.log(log)
             }}
           >
             <div className="relative flex flex-col w-full overflow-hidden max-h-60 grow dark:bg-slate-800 bg-gray-100 rounded-md border sm:px-2">
-              <Textarea
-                ref={inputRef}
-                tabIndex={0}
-                onKeyDown={onKeyDown}
-                placeholder="Send a message."
-                className="w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm dark:text-white text-black pr-[45px]"
-                autoFocus
-                spellCheck={false}
-                autoComplete="off"
-                autoCorrect="off"
-                name="message"
-                rows={1}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-              />
-              <ChatScrollAnchor trackVisibility={true} />
-              <div className="absolute right-5 top-4">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button type="submit" size="icon" disabled={inputValue === ''}>
-                      <ArrowUp />
-                      <span className="sr-only">Найда, шукай!</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Найда, шукай!</TooltipContent>
-                </Tooltip>
-              </div>
+
+              {progress ? (
+                <Progress.Root
+                  className="relative flex justify-center items-center overflow-hidden bg-[#41347d] rounded-full w-full h-[2.6rem]"
+                  style={{
+                    // Fix overflow clipping in Safari
+                    // https://gist.github.com/domske/b66047671c780a238b51c51ffde8d3a0
+                    transform: 'translateZ(0)',
+                  }}
+                  value={progress}
+                >
+                  <Progress.Indicator
+                    className="absolute z-10 bg-[#2563eb] w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.65, 0, 0.35, 1)]"
+                    style={{ transform: `translateX(-${100 - progress}%)` }}
+                  />
+                  <span className='z-30 text-gray-200'>{log[log.length - 1] ? log[log.length - 1].title : 'Шукаю...'}</span>
+                </Progress.Root>
+              ) : (
+                <>
+                  <Textarea
+                    ref={inputRef}
+                    tabIndex={0}
+                    onKeyDown={onKeyDown}
+                    placeholder="Send a message."
+                    className="w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm dark:text-white text-black pr-[45px]"
+                    autoFocus
+                    spellCheck={false}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    name="message"
+                    rows={1}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                  />
+
+                  <ChatScrollAnchor trackVisibility={true} />
+
+                  <div className="absolute right-5 top-4">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button type="submit" size="icon" disabled={inputValue === ''}>
+                          <ArrowUp />
+                          <span className="sr-only">Найда, шукай!</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Найда, шукай!</TooltipContent>
+                    </Tooltip>
+                  </div>
+                </>
+              )}
+
             </div>
           </form>
 

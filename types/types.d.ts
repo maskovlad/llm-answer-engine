@@ -43,7 +43,7 @@ interface StreamMessage {
     sources: boolean;
     relevant: boolean;
   }
-  log: string;
+  log: ServerLog;
 }
 interface Image {
   link: string;
@@ -90,7 +90,13 @@ interface QuestionLang {
   language: 'uk' | 'ru' | 'en';
 }
 
+type Percent = 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
 
+export interface ServerLog {
+  title: string;
+  time: number;
+  percent: Percent;
+}
 
 export interface MessageSettings {
   messageLang: string;

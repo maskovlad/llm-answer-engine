@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { ServerLog } from "@/types/types";
 
-const Log = ({ text, isOpen, clear  }: { text: string[], isOpen: boolean, clear: any }) => {
+const Log = ({ text, isOpen, clear }: { text: ServerLog[], isOpen: boolean, clear: any }) => {
 
   return (
     <div
@@ -8,7 +8,7 @@ const Log = ({ text, isOpen, clear  }: { text: string[], isOpen: boolean, clear:
       className={`overflow-y-auto text-sm text-gray-200 fixed inset-y-0 left-0 top-[57px] z-40 w-64 bg-gray-800 shadow-lg transition-transform duration-300 ease-in-out transform ${!isOpen ? '-translate-x-full' : 'translate-x-0'}`}
     >
       {text.map((item, index) => {
-         if (index % 2) return (<p key={`text-${index}`}>{item}</p>)
+        return (<p key={`text-${index}`}>{item.title} {item.time}</p>)
       })}
 
       <div className={`shadow-lg fixed bottom-[0vh] left-0 `}>
