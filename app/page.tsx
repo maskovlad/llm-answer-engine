@@ -44,13 +44,6 @@ export default function Page() {
   const [messages, setMessages] = useState<Message[]>([]);
   // 6. Set up state for the CURRENT LLM response (for displaying in the UI while streaming)
   const [currentLlmResponse, setCurrentLlmResponse] = useState('');
-  //  user settings for responce
-  const [settings, setSettings] = useState({
-    video: true,
-    image: true,
-    sources: true,
-    relevant: true,
-  });
   const [log, setLog] = useState<ServerLog[]>([]);
   const [showLog, setShowLog] = useState(false);
   const [openToast, setOpenToast] = useState(false);
@@ -121,6 +114,8 @@ export default function Page() {
       shopping: [] as Shopping[],
       status: '',
       ticker: undefined,
+      settings: {video: true, image:true, sources:true, relevant:true},
+      // log: [],
     };
 
     // читаємо налаштування запиту з local storage браузера
@@ -141,16 +136,18 @@ export default function Page() {
 
       let llmResponseString = "";
 
+      // ОТРИМАННЯ ДАНИХ
       for await (const message of readStreamableValue(streamableValue)) {
         const typedMessage = message as StreamMessage;
 
-        // ОТРИМАННЯ ДАНИХ
         setMessages((prevMessages) => {
+
           const messagesCopy = [...prevMessages];
           const messageIndex = messagesCopy.findIndex(msg => msg.id === newMessageId);
 
           if (messageIndex !== -1) {
             const currentMessage = messagesCopy[messageIndex];
+
             if (typedMessage.status === 'rateLimitReached') {
               currentMessage.status = 'rateLimitReached';
             }
@@ -162,17 +159,7 @@ export default function Page() {
               currentMessage.isStreaming = false;
             }
             if (typedMessage.settings) {
-              setSettings(typedMessage.settings)
-            }
-            if (typedMessage.log) {
-              // const newArr = []
-              // newArr.push(...log,typedMessage.log)
-              // log.push(typedMessage.log)
-              // console.log({newArr})
-              // console.log({log})
-              setLog(log => [...log, typedMessage.log])
-              setProgress(typedMessage.log.percent)
-              // updateString(log.length, typedMessage.log)
+              currentMessage.settings = typedMessage.settings
             }
             if (typedMessage.searchResults) {
               currentMessage.searchResults = typedMessage.searchResults;
@@ -201,18 +188,27 @@ export default function Page() {
             //   }
             // }
           }
-          return messagesCopy;
+          return messagesCopy;  // чому ми повертаємо це?
         });
+
         if (typedMessage.llmResponse) {
           llmResponseString += typedMessage.llmResponse;
           setCurrentLlmResponse(llmResponseString);
+          console.log(progress)
+          // setProgress(progress+1)
+        }
+
+        if (typedMessage.log) {
+          setLog(log => [...log, typedMessage.log])
+          setProgress(typedMessage.log.percent)
+          if (typedMessage.log.percent === 100) {
+            setTimeout(()=>setProgress(0),2000)
+          }
         }
       }
     } catch (error) {
       console.error("Error streaming data for user message:", error);
-    } finally {
-      setProgress(0)
-    }
+    } 
   };
 
   // LOG
@@ -223,7 +219,7 @@ export default function Page() {
     setLog([])
   }
 
-  console.log(log)
+  console.log(progress)
   return (
     <div>
 
@@ -271,7 +267,7 @@ export default function Page() {
                   <FinancialChart key={`financialChart-${index}`} ticker={message.ticker} />
                 )}
 
-                {settings.sources && message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
+                {message.settings.sources && message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
 
                 {message.places && message.places.length > 0 && (
                   <MapComponent key={`map-${index}`} places={message.places} />
@@ -279,7 +275,7 @@ export default function Page() {
 
                 <LLMResponseComponent llmResponse={message.content} currentLlmResponse={currentLlmResponse} index={index} key={`llm-response-${index}`} />
 
-                {settings.relevant && message.followUp && (
+                {message.settings.relevant && message.followUp && (
                   <div className="flex flex-col">
                     <FollowUpComponent key={`followUp-${index}`} followUp={message.followUp} handleFollowUpClick={handleFollowUpClick} />
                   </div>
@@ -289,8 +285,8 @@ export default function Page() {
               {/* Secondary content area */}
               <div className="w-full md:w-1/4 md:pl-2">
                 {message.shopping && message.shopping.length > 0 && <ShoppingComponent key={`shopping-${index}`} shopping={message.shopping} />}
-                {settings.video && message.videos && <VideosComponent key={`videos-${index}`} videos={message.videos} />}
-                {settings.image && message.images && <ImagesComponent key={`images-${index}`} images={message.images} />}
+                {message.settings.video && message.videos && <VideosComponent key={`videos-${index}`} videos={message.videos} />}
+                {message.settings.image && message.images && <ImagesComponent key={`images-${index}`} images={message.images} />}
                 {message.places && message.places.length > 0 && (
                   <MapDetails key={`map-${index}`} places={message.places} />
                 )}
@@ -338,7 +334,13 @@ export default function Page() {
                     className="absolute z-10 bg-[#2563eb] w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.65, 0, 0.35, 1)]"
                     style={{ transform: `translateX(-${100 - progress}%)` }}
                   />
-                  <span className='z-30 text-gray-200'>{log[log.length - 1] ? log[log.length - 1].title : 'Шукаю...'}</span>
+                  <span className='z-30 text-gray-200'>
+                    {progress === 10 
+                      ? 'Шукаю...' 
+                      : progress != 100 
+                        ? log[log.length - 1].title 
+                        : `${log[log.length - 1].title} ${Math.trunc(log[log.length - 1].time/1000)} сек` }
+                    </span>
                 </Progress.Root>
               ) : (
                 <>

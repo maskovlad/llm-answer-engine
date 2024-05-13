@@ -25,6 +25,14 @@ const StreamingComponent = ({ currentLlmResponse }: { currentLlmResponse: string
     );
 };
 
+function LinkRenderer(props: any) {
+  return (
+    <a href={props.href} target="_blank" rel="noreferrer">
+      {props.children}
+    </a>
+  );
+}
+
 // 4. Define the 'LLMResponseComponent' functional component that takes 'llmResponse', 'currentLlmResponse', and 'index' as props
 const LLMResponseComponent = ({ llmResponse, currentLlmResponse, index }: LLMResponseComponentProps) => {
     // 5. Check if 'llmResponse' is not empty
@@ -39,7 +47,7 @@ const LLMResponseComponent = ({ llmResponse, currentLlmResponse, index }: LLMRes
                         <h2 className="text-lg font-semibold flex-grow dark:text-white text-black">Response</h2>
                     </div>
                     <div className="dark:text-gray-300 text-gray-800 markdown-container">
-                        <Markdown>{llmResponse}</Markdown>
+                        <Markdown components={{ a: LinkRenderer}}>{llmResponse}</Markdown>
                         <div className="flex items-center justify-end">
                             <img src="./powered-by-groq.svg" alt="powered by groq" className='mt-2 h-6' />
                         </div>

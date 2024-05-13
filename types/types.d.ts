@@ -8,6 +8,7 @@ interface SearchResult {
   link: string;
   title: string;
 }
+
 interface Message {
   id: number;
   type: string;
@@ -23,7 +24,15 @@ interface Message {
   places?: Place[];
   shopping?: Shopping[];
   ticker?: string | undefined;
+  settings: {
+    video: boolean;
+    image: boolean;
+    sources: boolean;
+    relevant: boolean;
+  };
+  log?: ServerLog[];
 }
+
 interface StreamMessage {
   searchResults?: any;
   userMessage?: string;
@@ -45,6 +54,7 @@ interface StreamMessage {
   }
   log: ServerLog;
 }
+
 interface Image {
   link: string;
 }
@@ -90,7 +100,7 @@ interface QuestionLang {
   language: 'uk' | 'ru' | 'en';
 }
 
-type Percent = 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100;
+type Percent = number
 
 export interface ServerLog {
   title: string;

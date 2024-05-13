@@ -486,9 +486,11 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
         streamable.update({ 'llmResponse': chunk.choices[0].delta.content });
       } else if (chunk.choices[0].finish_reason === "stop") {
         streamable.update({ 'llmResponseEnd': true });
-        streamable.update({ 'log': { title: 'Кінець відповіді: ', time: (chatCompletion1 - processAndVectorizeContent1), percent: 0 } })
       }
     }
+
+    const relevantQuestions1 = Date.now()
+    streamable.update({ 'log': { title: 'Додаю пов\`язані питання ', time: (relevantQuestions1 - chatCompletion1), percent: 90 } })
 
     if (showFollowup) {
       const followUp = await relevantQuestions(sources, inferenceModel, messageLang);
@@ -496,10 +498,8 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     }
 
 
-    const relevantQuestions1 = Date.now()
     console.log({ relevantQuestions1: relevantQuestions1 - chatCompletion1 })
-    streamable.update({ 'log': { title: 'relevantQuestions: ', time: (relevantQuestions1 - chatCompletion1), percent: 0 } })
-    streamable.update({ 'log': { title: 'Час запиту: ', time: (relevantQuestions1 - start), percent: 0 } })
+    streamable.update({ 'log': { title: 'Час запиту: ', time: (relevantQuestions1 - start), percent: 100 } })
 
     streamable.done({ status: 'done' });
   })();
