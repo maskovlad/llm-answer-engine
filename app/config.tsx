@@ -7,7 +7,7 @@
 export const config = {
     useOllamaInference: false,
     useOllamaEmbeddings: false,
-    useEmbeddings: 'huggingface', // 'ollama' // 'openai',
+    useEmbeddings: 'nomic',//'huggingface', // 'ollama' // 'openai',
 
     useTranslateQuery: true, // перекладати запит
     useTranslateAnswer: true, // перекладати відповідь

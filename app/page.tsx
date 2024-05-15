@@ -194,21 +194,23 @@ export default function Page() {
         if (typedMessage.llmResponse) {
           llmResponseString += typedMessage.llmResponse;
           setCurrentLlmResponse(llmResponseString);
-          console.log(progress)
+          // console.log(progress)
           // setProgress(progress+1)
         }
 
         if (typedMessage.log) {
           setLog(log => [...log, typedMessage.log])
           setProgress(typedMessage.log.percent)
-          if (typedMessage.log.percent === 100) {
-            setTimeout(()=>setProgress(0),2000)
-          }
+          // if (typedMessage.log.percent === 100) {
+            
+          // }
         }
       }
     } catch (error) {
       console.error("Error streaming data for user message:", error);
-    } 
+    } finally {
+      setTimeout(() => setProgress(0), 2000)
+    }
   };
 
   // LOG
@@ -219,7 +221,7 @@ export default function Page() {
     setLog([])
   }
 
-  console.log(progress)
+  // console.log(progress)
   return (
     <div>
 

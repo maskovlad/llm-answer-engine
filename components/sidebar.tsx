@@ -130,6 +130,8 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
               <option value="uaritm/multilingual_en_uk_pl_ru">multilingual_en_uk_pl_ru</option>
               <option value="sentence-transformers/all-mpnet-base-v2">all-mpnet-base-v2</option>
               <option value="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2">paraphrase-multilingual-MiniLM-L12-v2</option>
+              <option value="text-embedding-3-small">OpenAI: text-embedding-3-small</option>
+              <option value="nomic-embed-text-v1">nomic-embed-text-v1</option>
             </select>
           </div>
 {/* Inference Model */}

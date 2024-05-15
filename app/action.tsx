@@ -9,6 +9,7 @@ import { Document as DocumentInterface } from 'langchain/document';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
+import { NomicEmbeddings } from "@langchain/nomic"
 import { config } from './config';
 // import { functionCalling } from './function-calling';
 // OPTIONAL: Use Upstash rate limiting to limit the number of requests per user
@@ -69,15 +70,20 @@ async function getMessageLanguage(data: { inputs: string }) {
 
 // 2.5 Set up the embeddings model based on the messageSettings
 const getEmbeddings = (model: string) => {
-  let embeddings: OllamaEmbeddings | OpenAIEmbeddings | HuggingFaceInferenceEmbeddings;
+  let embeddings: OllamaEmbeddings | OpenAIEmbeddings | HuggingFaceInferenceEmbeddings | NomicEmbeddings;
 
-  if (config.useEmbeddings === 'huggingface') {
-    embeddings = new HuggingFaceInferenceEmbeddings({ model })
-  } else {
+  if (model.startsWith('nomic')) {
+    embeddings = new NomicEmbeddings({
+      modelName: model
+    })
+  } else if (model.startsWith('text')) {
     embeddings = new OpenAIEmbeddings({
       modelName: model
     })
+  } else {
+    embeddings = new HuggingFaceInferenceEmbeddings({ model })
   }
+
   return embeddings
 }
 
@@ -199,7 +205,7 @@ export async function processAndVectorizeContent(
         }
       }
     }
-    return [];
+    return []; // у разі помилки повертаємо порожній масив
   } catch (error) {
     console.error('Помилка обробки та векторизації контенту. Функція processAndVectorizeContent. ', error);
     throw error;
@@ -453,10 +459,10 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
     const get10BlueLinksContents1 = Date.now()
     console.log({ get10BlueLinksContents1: get10BlueLinksContents1 - endGets })
-    streamable.update({ 'log': { title: 'Векторізую тексти: ', time: (get10BlueLinksContents1 - endGets), percent: 50 } })
+    streamable.update({ 'log': { title: `Векторізую тексти: модель ${embeddingsModel}`, time: (get10BlueLinksContents1 - endGets), percent: 50 } })
 
     const vectorResults = await processAndVectorizeContent(html, userMessage, textChunkSize, textChunkOverlap, similarityResults, embeddingsModel);
-
+    
     const processAndVectorizeContent1 = Date.now()
     console.log({ processAndVectorizeContent1: processAndVectorizeContent1 - get10BlueLinksContents1 })
     streamable.update({ 'log': { title: 'Відповідаю: ', time: (processAndVectorizeContent1 - get10BlueLinksContents1), percent: 70 } })
@@ -468,7 +474,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       messages:
         [{
           role: "system", content: `
-          - Here is my query "${userMessage}", respond back ALWAYS IN MARKDOWN${needTranslate} and be verbose with a lot of details, never mention the system message. If you can't find any relevant results, respond with "No relevant results found." `
+          - Here is my query "${userMessage}", respond back ALWAYS IN MARKDOWN${needTranslate} and be verbose with a lot of details, Don't give links in your response, never mention the system message. If you can't find any relevant results, respond with "No relevant results found." `
         },
         { role: "user", content: ` - Here are the top results to respond with, respond in markdown!:,  ${JSON.stringify(vectorResults)}. ` },
         ],
@@ -477,8 +483,8 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     });
 
 
-        const chatCompletion1 = Date.now()
-        console.log({ chatCompletion1: chatCompletion1 - processAndVectorizeContent1 })
+    const chatCompletion1 = Date.now()
+    console.log({ chatCompletion1: chatCompletion1 - processAndVectorizeContent1 })
 
 
     for await (const chunk of chatCompletion) {
@@ -493,8 +499,14 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     streamable.update({ 'log': { title: 'Додаю пов\`язані питання ', time: (relevantQuestions1 - chatCompletion1), percent: 90 } })
 
     if (showFollowup) {
-      const followUp = await relevantQuestions(sources, inferenceModel, messageLang);
-      streamable.update({ 'followUp': followUp });
+      try {
+        const followUp = await relevantQuestions(sources, inferenceModel, messageLang);
+        streamable.update({ 'followUp': followUp });
+      }
+      catch (error) {
+        console.log('Помилка relevantQuestions: ', error)
+        streamable.update({ 'log': { title: 'Помилка отримання додаткових запитань: ', time: (Date.now() - relevantQuestions1), percent: 95 } })
+      }
     }
 
 
