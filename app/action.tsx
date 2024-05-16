@@ -10,6 +10,7 @@ import { OpenAIEmbeddings } from '@langchain/openai';
 import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { NomicEmbeddings } from "@langchain/nomic"
+import { MistralAIEmbeddings } from "@langchain/mistralai";
 import { config } from './config';
 // import { functionCalling } from './function-calling';
 // OPTIONAL: Use Upstash rate limiting to limit the number of requests per user
@@ -55,14 +56,14 @@ async function getMessageLanguage(data: { inputs: string }) {
       }
     );
     const result: GetLangResponse[][] = await response.json();
-    console.log({ 'Визначення мови: ': JSON.stringify(result) })
+    
     const final = result[0][0].label.substring(0, 2)
     if (!final) {
       return 'no'
     }
     return final
   } catch (err) {
-    console.log('Помилка визначення мови запиту, функція getMessageLanguage:', err)
+    console.error('Помилка визначення мови запиту, функція getMessageLanguage:', err)
     return 'no'
   }
 }
@@ -70,7 +71,8 @@ async function getMessageLanguage(data: { inputs: string }) {
 
 // 2.5 Set up the embeddings model based on the messageSettings
 const getEmbeddings = (model: string) => {
-  let embeddings: OllamaEmbeddings | OpenAIEmbeddings | HuggingFaceInferenceEmbeddings | NomicEmbeddings;
+  let embeddings: OllamaEmbeddings | OpenAIEmbeddings | HuggingFaceInferenceEmbeddings | NomicEmbeddings | 
+    MistralAIEmbeddings;
 
   if (model.startsWith('nomic')) {
     embeddings = new NomicEmbeddings({
@@ -80,6 +82,8 @@ const getEmbeddings = (model: string) => {
     embeddings = new OpenAIEmbeddings({
       modelName: model
     })
+  } else if (model.startsWith('mistral')) {
+    embeddings = new MistralAIEmbeddings({})
   } else {
     embeddings = new HuggingFaceInferenceEmbeddings({ model })
   }
@@ -189,13 +193,14 @@ export async function processAndVectorizeContent(
 ): Promise<DocumentInterface[]> {
 
   const embeddings = getEmbeddings(embeddingsModel)
-
+  
   try {
     for (let i = 0; i < contents.length; i++) {
       const content = contents[i];
       if (content.html.length > 0) {
         try {
           const splitText = await new RecursiveCharacterTextSplitter({ chunkSize: textChunkSize, chunkOverlap: textChunkOverlap }).splitText(content.html);
+          
           // можливо тут він langchain звертається до openai api
           const vectorStore = await MemoryVectorStore.fromTexts(splitText, { title: content.title, link: content.link }, embeddings);
           // MemoryVectorStore — це ефемерне векторне сховище в пам’яті, яке зберігає вбудовування в пам’яті та виконує точний лінійний пошук найбільш схожих вбудовувань. Метрикою подібності за замовчуванням є косинусна подібність, але її можна змінити на будь-яку з метрик подібності, підтримуваних ml-distance.
@@ -314,11 +319,11 @@ export async function getVideos(message: string): Promise<{ imageUrl: string, li
 }
 
 // 8. Fetch search results from Google Serper API
-export async function getSourcesSerper(message: string, locale: string, numberOfPagesToScan = config.numberOfPagesToScan): Promise<SearchResult[]> {
+export async function getSourcesSerper(message: string, locale: string, numberOfPagesToScan = config.numberOfPagesToScan): Promise<SearchResult[] | null> {
   const url = 'https://google.serper.dev/search';
 
   const data = JSON.stringify({
-    "q": message,
+    "q": message + ' -filetype:pdf AND -filetype:doc AND -filetype:docx',
     "num": numberOfPagesToScan,
   });
 
@@ -334,12 +339,13 @@ export async function getSourcesSerper(message: string, locale: string, numberOf
   try {
     const response = await fetch(url, requestOptions);
     if (!response.ok) {
-      throw new Error(`Відповідь мережі не ОК. Функція getSourcesSerper. Status: ${response.status}`);
+      console.error(`Відповідь мережі не ОК. Функція getSourcesSerper. Status: ${response.status}`);
+      return null
     }
     const jsonResponse = await response.json();
-
+    
     if (!jsonResponse.organic.length) {
-      throw new Error('Невірний формат відповіді Serper API');
+      return null
     }
 
     const final = jsonResponse.organic.map((result: any): SearchResult => ({
@@ -353,7 +359,7 @@ export async function getSourcesSerper(message: string, locale: string, numberOf
 
   } catch (error) {
     console.error('Проблема запиту у функції getSourcesSerper::', error);
-    throw error;
+    return null
   }
 }
 
@@ -368,7 +374,7 @@ const relevantQuestions = async (sources: SearchResult[], inferenceModel: string
     { lang: 'ru', text: 'IN RUSSIAN' }
   ]
   const lang = inTranslate.find(value => value.lang === relevantLang)?.text
-  console.log({ relevantLang: lang })
+  // console.log({ relevantLang: lang })
 
   return await openai.chat.completions.create({
     messages: [
@@ -448,21 +454,23 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
 
     showImages ? streamable.update({ 'images': images }) : null;
-    showSources ? streamable.update({ 'searchResults': sources }) : null;
+    (showSources && sources) ? streamable.update({ 'searchResults': sources }) : null;
     showVideo ? streamable.update({ 'videos': videos }) : null;
     // if (config.useFunctionCalling) {
     //   streamable.update({ 'conditionalFunctionCallUI': condtionalFunctionCallUI });
     // }
-
-    const html = await get10BlueLinksContents(sources, timeoutGetBlueLinks);
-
-
     const get10BlueLinksContents1 = Date.now()
     console.log({ get10BlueLinksContents1: get10BlueLinksContents1 - endGets })
     streamable.update({ 'log': { title: `Векторізую тексти: модель ${embeddingsModel}`, time: (get10BlueLinksContents1 - endGets), percent: 50 } })
-
-    const vectorResults = await processAndVectorizeContent(html, userMessage, textChunkSize, textChunkOverlap, similarityResults, embeddingsModel);
     
+    let vectorResults;
+
+    if (sources) {
+      const html = await get10BlueLinksContents(sources, timeoutGetBlueLinks);
+
+      vectorResults = await processAndVectorizeContent(html, userMessage, textChunkSize, textChunkOverlap, similarityResults, embeddingsModel);
+    }
+
     const processAndVectorizeContent1 = Date.now()
     console.log({ processAndVectorizeContent1: processAndVectorizeContent1 - get10BlueLinksContents1 })
     streamable.update({ 'log': { title: 'Відповідаю: ', time: (processAndVectorizeContent1 - get10BlueLinksContents1), percent: 70 } })
@@ -498,7 +506,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     const relevantQuestions1 = Date.now()
     streamable.update({ 'log': { title: 'Додаю пов\`язані питання ', time: (relevantQuestions1 - chatCompletion1), percent: 90 } })
 
-    if (showFollowup) {
+    if (showFollowup && sources) {
       try {
         const followUp = await relevantQuestions(sources, inferenceModel, messageLang);
         streamable.update({ 'followUp': followUp });

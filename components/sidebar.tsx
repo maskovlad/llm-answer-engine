@@ -32,6 +32,13 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
     setChanged(true)
   };
 
+    function getEmbeddingsModel(value: string): string {
+        if (value === 'uk' || value === 'ru') {
+          return 'mistral'
+        }
+        return 'nomic-embed-text-v1'
+    }
+
   return (
     <div
       className={`fixed inset-y-0 right-0 z-40 w-64 bg-white dark:bg-gray-800 shadow-lg transition-transform duration-300 ease-in-out transform ${!isOpen ? 'translate-x-full' : '-translate-x-0'}`}
@@ -79,7 +86,10 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
             <label className="block mb-2 font-semibold">Мова пошуку</label>
             <select
               value={settings.searchLang}
-              onChange={(e) => handleSettingsChange('searchLang', e.target.value)}
+              onChange={(e) => {
+                handleSettingsChange('searchLang', e.target.value)
+                handleSettingsChange('embeddingsModel', getEmbeddingsModel(e.target.value))
+              }}
               className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="uk">Українська</option>
@@ -126,12 +136,10 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
               onChange={(e) => handleSettingsChange('embeddingsModel', e.target.value)}
               className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             >
-              <option value="sentence-transformers/all-MiniLM-L6-v2">all-MiniLM-L6-v2(en)</option>
-              <option value="uaritm/multilingual_en_uk_pl_ru">multilingual_en_uk_pl_ru</option>
-              <option value="sentence-transformers/all-mpnet-base-v2">all-mpnet-base-v2</option>
-              <option value="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2">paraphrase-multilingual-MiniLM-L12-v2</option>
-              <option value="text-embedding-3-small">OpenAI: text-embedding-3-small</option>
+              <option value="mistral">Mistral</option>
               <option value="nomic-embed-text-v1">nomic-embed-text-v1</option>
+              <option value="sentence-transformers/all-MiniLM-L6-v2">all-MiniLM-L6-v2(en)</option>
+              <option value="text-embedding-3-small" disabled>OpenAI: text-embedding-3-small</option>
             </select>
           </div>
 {/* Inference Model */}
