@@ -5,10 +5,10 @@ const Log = ({ text, isOpen, clear }: { text: ServerLog[], isOpen: boolean, clea
   return (
     <div
 
-      className={`overflow-y-auto text-sm text-gray-200 fixed inset-y-0 left-0 top-[57px] z-40 w-64 bg-gray-800 shadow-lg transition-transform duration-300 ease-in-out transform ${!isOpen ? '-translate-x-full' : 'translate-x-0'}`}
+      className={`overflow-y-auto text-[12px] text-gray-200 fixed inset-y-0 left-0 top-[57px] z-40 w-64 bg-gray-800 shadow-lg transition-transform duration-300 ease-in-out transform ${!isOpen ? '-translate-x-full' : 'translate-x-0'}`}
     >
       {text.map((item, index) => {
-        return (<p key={`text-${index}`}>{item.title} {item.time}</p>)
+        return (<p key={`text-${index}`}>{item.fTitle ? item.fTitle : item.title} {item.time}</p>)
       })}
 
       <div className={`shadow-lg fixed bottom-[0vh] left-0 `}>

@@ -6,7 +6,8 @@ interface LLMResponseComponentProps {
 }
 
 // 2. Import the 'Markdown' component from 'react-markdown'
-import Markdown from 'react-markdown';
+// import Markdown from 'react-markdown';
+import Markdown from 'markdown-to-jsx';
 
 // 3. Define the 'StreamingComponent' functional component that renders the 'currentLlmResponse'
 const StreamingComponent = ({ currentLlmResponse }: { currentLlmResponse: string }) => {
@@ -25,13 +26,15 @@ const StreamingComponent = ({ currentLlmResponse }: { currentLlmResponse: string
     );
 };
 
-function LinkRenderer(props: any) {
-  return (
-    <a href={props.href} target="_blank" rel="noreferrer">
-      {props.children}
-    </a>
-  );
-}
+// function LinkRenderer(props: any) {
+//   return (
+//     <a href={props.href} target="_blank" rel="noreferrer">
+//       {props.children}
+//     </a>
+//   );
+// }
+
+const MyLink = ({ children, ...props }: {children: any}) => <a target="_blank" rel="noreferrer" {...props}>{children}</a>
 
 // 4. Define the 'LLMResponseComponent' functional component that takes 'llmResponse', 'currentLlmResponse', and 'index' as props
 const LLMResponseComponent = ({ llmResponse, currentLlmResponse, index }: LLMResponseComponentProps) => {
@@ -47,7 +50,14 @@ const LLMResponseComponent = ({ llmResponse, currentLlmResponse, index }: LLMRes
                         <h2 className="text-lg font-semibold flex-grow dark:text-white text-black">Response</h2>
                     </div>
                     <div className="dark:text-gray-300 text-gray-800 markdown-container">
-                        <Markdown components={{ a: LinkRenderer}}>{llmResponse}</Markdown>
+                        <Markdown options={{
+                            overrides: {
+                                a: {
+                                    component: MyLink,
+                                },
+                            },
+                        }}>{llmResponse}</Markdown>
+                        {/* {llmResponse} */}
                         <div className="flex items-center justify-end">
                             <img src="./powered-by-groq.svg" alt="powered by groq" className='mt-2 h-6' />
                         </div>

@@ -202,9 +202,9 @@ export async function processAndVectorizeContent(
         try {
           let splitText = await new RecursiveCharacterTextSplitter({ chunkSize: textChunkSize, chunkOverlap: textChunkOverlap }).splitText(content.html);
 
-          console.log('=========splitText=======')
-          console.log(splitText.length)
-          console.log('=========splitText=======')
+          // console.log('=========splitText=======')
+          // console.log(splitText.length)
+          // console.log('=========splitText=======')
 
           // у моделі mistral є обмеження у ~16,000 tokens
           if (embeddingsModel === 'mistral') {
@@ -228,6 +228,7 @@ export async function processAndVectorizeContent(
           return await vectorStore.similaritySearch(query, numberOfSimilarityResults);
         } catch (error) {
           console.error(`Помилка обробки контенту. Функція processAndVectorizeContent. ${content.link}:`, error);
+          return []
         }
       }
     }
@@ -413,6 +414,12 @@ const relevantQuestions = async (sources: SearchResult[], inferenceModel: string
   });
 };
 
+// LOG===============
+const streamLog = (streamable: any, {title, fTitle, predTime, percent} : {title: string, fTitle?: string, predTime: number, percent: number}) => {
+  console.log(fTitle ? fTitle : title, `: ${Date.now()-predTime}`)
+  return streamable.update({'log': {title, fTitle, time: Date.now()-predTime, percent}})
+}
+
 // 10. Main action function that orchestrates the entire process
 async function myAction(message: string, messageSettings: MessageSettings): Promise<any> {
   "use server";
@@ -431,26 +438,24 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       }
     }
 
-    const start = Date.now()
-    console.log({ start })
-    streamable.update({ 'log': { title: 'Початок запиту: ', time: start, percent: 10 } })
-
-    // якщо автоматичне визначення мови, то визначаємо за допомогою моделі
+    const startTime = Date.now()
+    streamLog(streamable,{  title: 'Початок запиту: ', predTime: 0, percent: 10 } )
+    
     // const messageLanguage = messageLang === 'auto'
     //   ? await getMessageLanguage({ "inputs": message })
     //   : messageLang
     const questionLanguage = messageLang
     // console.log({ messageLanguage })
-    // streamable.update({ 'log': 'messageLanguage: ' + messageLanguage });
+    // streamLog(streamable, 'messageLanguage: ' + messageLanguage });
 
     if (questionLanguage != searchLang) {
       userMessage = await translateText(message, questionLanguage, searchLang)
-      streamable.update({ 'log': { title: `Перекладений запит: ${userMessage}`, time: userMessage, percent: 20 } })
+      streamLog(streamable, { title: 'Перекладено запит: ',fTitle: `Перекладений запит: ${userMessage}`, predTime: startTime, percent: 20 })
+      // streamable.update({ 'info': `Перекладений запит: ${userMessage}` });
     }
 
-    const endTranslate = Date.now()
-    console.log({ endTranslate: endTranslate - start })
-    streamable.update({ 'log': { title: 'Шукаю інформацію по твоєму запиту: ', time: (endTranslate - start), percent: 30 } })
+    const translateMessageTime = Date.now()
+    streamLog(streamable, { title: 'Шукаю інформацію по твоєму запиту: ', predTime: startTime, percent: 30 })
 
     // передаємо на клієнтські компоненти налаштування
     streamable.update({
@@ -469,9 +474,8 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       // functionCalling(userMessage),
     ]);
 
-    const endGets = Date.now()
-    console.log({ endGets: endGets - endTranslate })
-    streamable.update({ 'log': { title: 'Отримую тексти сторінок: ', time: (endGets - endTranslate), percent: 40 } })
+    const endGetsTime = Date.now()
+    streamLog(streamable,{title: 'Отримую тексти сторінок: ', fTitle: 'endGetSources', predTime:  translateMessageTime, percent: 40})
 
 
     showImages ? streamable.update({ 'images': images }) : null;
@@ -482,30 +486,28 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     // }
     
     let vectorResults;
+
     let get10BlueLinksTime = Date.now();
 
     if (sources) {
       const html = await get10BlueLinksContents(sources, timeoutGetBlueLinks);
 
       get10BlueLinksTime = Date.now()
-      console.log({ get10BlueLinksTime: get10BlueLinksTime - endGets })
-      streamable.update({ 'log': { title: `Векторізую тексти: модель ${embeddingsModel}`, time: (get10BlueLinksTime - endGets), percent: 50 } })
+      streamLog(streamable, { title: `Векторізую тексти: модель ${embeddingsModel}`, fTitle: 'get10BlueLinksContents', predTime: endGetsTime, percent: 50 })
 
       // console.log('=======html========')
       // console.log({htmlLength: html[0].html.length})
       // console.log( html[0].html)
       // console.log('=======html========')
-      // streamable.update({ 'log': { title: html[0].html, time: 0, percent: 50 } })
+      // streamLog(streamable, { title: html[0].html, predTime: 0, percent: 50 } })
       // streamable.done({ status: 'done' });
       // return streamable.value;
       vectorResults = await processAndVectorizeContent(html, userMessage, textChunkSize, textChunkOverlap, similarityResults, embeddingsModel);
-      streamable.update({ 'log': { title: JSON.stringify(vectorResults), time: 1, percent: 70 } })
-
+      // streamLog(streamable, { title: JSON.stringify(vectorResults), predTime: 1, percent: 70 })
     }
 
-    const processAndVectorizeContent1 = Date.now()
-    console.log({ processAndVectorizeContent1: processAndVectorizeContent1 - get10BlueLinksTime })
-    streamable.update({ 'log': { title: 'Відповідаю: ', time: (processAndVectorizeContent1 - get10BlueLinksTime), percent: 70 } })
+    const processAndVectorizeContentTime = Date.now()
+    streamLog(streamable, { title: 'Формую відповідь: ', fTitle: 'processAndVectorizeContent', predTime: get10BlueLinksTime, percent: 60 })
 
     const needTranslate = (answerLang != 'en') ? (` AND ALWAYS IN ${answerLang === 'uk' ? 'UKRAINIAN' : 'RUSSIAN'}`) : " AND ALWAYS IN ENGLISH"
 
@@ -523,8 +525,8 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     });
 
 
-    const chatCompletion1 = Date.now()
-    console.log({ chatCompletion1: chatCompletion1 - processAndVectorizeContent1 })
+    const chatCompletionTime = Date.now()
+    streamLog(streamable, { title: 'Відповідаю: ', fTitle: 'chatCompletion', predTime: processAndVectorizeContentTime, percent: 70 })
 
 
     for await (const chunk of chatCompletion) {
@@ -535,8 +537,8 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       }
     }
 
-    const relevantQuestions1 = Date.now()
-    streamable.update({ 'log': { title: 'Додаю пов\`язані питання ', time: (relevantQuestions1 - chatCompletion1), percent: 90 } })
+    const relevantQuestionsTime = Date.now()
+    streamLog(streamable, { title: 'Додаю пов\`язані питання', fTitle: 'endShowAnswer', predTime: chatCompletionTime, percent: 90 })
 
     if (showFollowup && sources) {
       try {
@@ -545,13 +547,11 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       }
       catch (error) {
         console.log('Помилка relevantQuestions: ', error)
-        streamable.update({ 'log': { title: 'Помилка отримання додаткових запитань: ', time: (Date.now() - relevantQuestions1), percent: 95 } })
+        streamLog(streamable, { title: 'Помилка отримання додаткових запитань',fTitle:'relevantQuestionsError', predTime: relevantQuestionsTime, percent: 95 })
       }
     }
 
-
-    console.log({ relevantQuestions1: relevantQuestions1 - chatCompletion1 })
-    streamable.update({ 'log': { title: 'Час запиту: ', time: (relevantQuestions1 - start), percent: 100 } })
+    streamLog(streamable, { title: 'Час запиту: ', predTime:  startTime, percent: 100 })
 
     streamable.done({ status: 'done' });
   })();

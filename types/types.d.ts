@@ -104,6 +104,7 @@ type Percent = number
 
 export interface ServerLog {
   title: string;
+  fTitle?: string;
   time: number;
   percent: Percent;
 }

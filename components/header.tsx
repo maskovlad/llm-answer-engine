@@ -20,7 +20,7 @@ export function Header() {
           <a className='inline-flex' href="https://naida.vercel.app" rel="noopener" target="_blank">
             <span className="block sm:inline text-lg sm:text-xl lg:text-2xl font-semibold dark:text-white text-black">NAIDA </span>
           </a>
-          <span className="linear-wipe text-sm">ШІстема пошуку відповідей (alpha)</span>
+          {/* <span className="linear-wipe text-sm">ШІстема пошуку відповідей (alpha)</span> */}
         </span>
 
         <div className="flex items-center justify-end space-x-2">
