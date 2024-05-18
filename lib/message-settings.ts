@@ -6,7 +6,7 @@ export const defaultMessageSettings: MessageSettings = {
   answerLang: 'uk',
   searchSystem: 'google',
 
-  embeddingsModel: 'sentence-transformers/all-MiniLM-L6-v2',
+  embeddingsModel: 'nomic-embed-text-v1',
   inferenceModel: 'mixtral-8x7b-32768',
 
   showSources: true,

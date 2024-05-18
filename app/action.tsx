@@ -193,17 +193,38 @@ export async function processAndVectorizeContent(
 ): Promise<DocumentInterface[]> {
 
   const embeddings = getEmbeddings(embeddingsModel)
+  let vectorStore: MemoryVectorStore;
   
   try {
     for (let i = 0; i < contents.length; i++) {
       const content = contents[i];
       if (content.html.length > 0) {
         try {
-          const splitText = await new RecursiveCharacterTextSplitter({ chunkSize: textChunkSize, chunkOverlap: textChunkOverlap }).splitText(content.html);
+          let splitText = await new RecursiveCharacterTextSplitter({ chunkSize: textChunkSize, chunkOverlap: textChunkOverlap }).splitText(content.html);
+
+          console.log('=========splitText=======')
+          console.log(splitText.length)
+          console.log('=========splitText=======')
+
+          // у моделі mistral є обмеження у ~16,000 tokens
+          if (embeddingsModel === 'mistral') {
+            splitText = splitText.slice(0,42)
+          }
+
+          try {
+            // тут посилаємо запрос на провайдера text embeddings
+            vectorStore = await MemoryVectorStore.fromTexts(splitText, { title: content.title, link: content.link }, embeddings);
+          } catch (err) {
+            // довго вивалюється помилка від містралі, аж через п'ять запитів
+            console.error('Помилка з вбудовуванням тексту: ', err)
+            return []
+          }
+          // console.log('=========vectorStore=======')
+          // console.log(vectorStore)
+          // console.log('=========vectorStore=======')
           
-          // можливо тут він langchain звертається до openai api
-          const vectorStore = await MemoryVectorStore.fromTexts(splitText, { title: content.title, link: content.link }, embeddings);
           // MemoryVectorStore — це ефемерне векторне сховище в пам’яті, яке зберігає вбудовування в пам’яті та виконує точний лінійний пошук найбільш схожих вбудовувань. Метрикою подібності за замовчуванням є косинусна подібність, але її можна змінити на будь-яку з метрик подібності, підтримуваних ml-distance.
+          // це вже відбувається на нашому  сервері
           return await vectorStore.similaritySearch(query, numberOfSimilarityResults);
         } catch (error) {
           console.error(`Помилка обробки контенту. Функція processAndVectorizeContent. ${content.link}:`, error);
@@ -459,21 +480,32 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     // if (config.useFunctionCalling) {
     //   streamable.update({ 'conditionalFunctionCallUI': condtionalFunctionCallUI });
     // }
-    const get10BlueLinksContents1 = Date.now()
-    console.log({ get10BlueLinksContents1: get10BlueLinksContents1 - endGets })
-    streamable.update({ 'log': { title: `Векторізую тексти: модель ${embeddingsModel}`, time: (get10BlueLinksContents1 - endGets), percent: 50 } })
     
     let vectorResults;
+    let get10BlueLinksTime = Date.now();
 
     if (sources) {
       const html = await get10BlueLinksContents(sources, timeoutGetBlueLinks);
 
+      get10BlueLinksTime = Date.now()
+      console.log({ get10BlueLinksTime: get10BlueLinksTime - endGets })
+      streamable.update({ 'log': { title: `Векторізую тексти: модель ${embeddingsModel}`, time: (get10BlueLinksTime - endGets), percent: 50 } })
+
+      // console.log('=======html========')
+      // console.log({htmlLength: html[0].html.length})
+      // console.log( html[0].html)
+      // console.log('=======html========')
+      // streamable.update({ 'log': { title: html[0].html, time: 0, percent: 50 } })
+      // streamable.done({ status: 'done' });
+      // return streamable.value;
       vectorResults = await processAndVectorizeContent(html, userMessage, textChunkSize, textChunkOverlap, similarityResults, embeddingsModel);
+      streamable.update({ 'log': { title: JSON.stringify(vectorResults), time: 1, percent: 70 } })
+
     }
 
     const processAndVectorizeContent1 = Date.now()
-    console.log({ processAndVectorizeContent1: processAndVectorizeContent1 - get10BlueLinksContents1 })
-    streamable.update({ 'log': { title: 'Відповідаю: ', time: (processAndVectorizeContent1 - get10BlueLinksContents1), percent: 70 } })
+    console.log({ processAndVectorizeContent1: processAndVectorizeContent1 - get10BlueLinksTime })
+    streamable.update({ 'log': { title: 'Відповідаю: ', time: (processAndVectorizeContent1 - get10BlueLinksTime), percent: 70 } })
 
     const needTranslate = (answerLang != 'en') ? (` AND ALWAYS IN ${answerLang === 'uk' ? 'UKRAINIAN' : 'RUSSIAN'}`) : " AND ALWAYS IN ENGLISH"
 
