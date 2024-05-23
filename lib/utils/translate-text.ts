@@ -11,7 +11,15 @@ export async function translateText(inputText: string, sourceLanguage?: string, 
       model,
       inputs: inputText,
     });
-    console.log(translation)
+    // const translation1 = await hf.translation({
+    //   model: 'facebook/nllb-200-3.3B',
+    //   inputs: inputText,
+    //   parameters: {
+    //     "src_lang": "uk_XX",
+    //     "tgt_lang": "en_XX"
+    //   }
+    // })
+    // console.log({translation1})
     // @ts-ignore тому що: Property 'translation_text' does not exist on type 'TranslationOutput'. Property 'translation_text' does not exist on type 'TranslationOutputValue[]'
     return translation.translation_text
   } catch (err) {

@@ -82,6 +82,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
               onChange={(e) => handleSettingsChange([{ field: 'messageLang', value: e.target.value }])}
               className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             >
+              <option value="auto">Авто</option>
               <option value="uk">Українська</option>
               <option value="ru">Русский</option>
               <option value="en">English</option>
@@ -141,8 +142,8 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
           onChange={(e) => handleSettingsChange([{ field: 'embeddingsModel', value: e.target.value }])}
           className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
         >
-          <option value="nomic-embed-text-v1">nomic-embed-text-v1</option>
           <option value="sentence-transformers/all-MiniLM-L6-v2">all-MiniLM-L6-v2(en)</option>
+          <option value="nomic-embed-text-v1" disabled>nomic-embed-text-v1</option>
           <option value="mistral" disabled>Mistral</option>
           <option value="text-embedding-3-small" disabled>OpenAI: text-embedding-3-small</option>
         </select>

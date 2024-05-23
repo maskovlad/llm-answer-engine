@@ -28,6 +28,7 @@
     "@upstash/ratelimit": "^1.0.3",
     "@upstash/redis": "^1.30.0",
     "@vercel/analytics": "^1.2.2",
+    "@vitalets/google-translate-api": "^9.2.0",
     "ai": "latest",
     "cheerio": "^1.0.0-rc.12",
     "class-variance-authority": "^0.7.0",

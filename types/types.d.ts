@@ -3,12 +3,6 @@ export interface GetLangResponse {
   score: number;
 }
 
-interface SearchResult {
-  favicon: string;
-  link: string;
-  title: string;
-}
-
 interface Message {
   id: number;
   type: string;
@@ -136,7 +130,7 @@ export interface MessageSettings {
 interface SearchResult {
   title: string;
   link: string;
-  snippet: string;
+  snippet?: string;
   favicon: string;
 }
 

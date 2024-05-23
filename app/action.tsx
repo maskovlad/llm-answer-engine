@@ -19,6 +19,8 @@ import { Redis } from "@upstash/redis";
 import { headers } from 'next/headers'
 import { translateText } from '@/lib/utils/translate-text';
 import { ContentResult, GetLangResponse, MessageSettings, SearchResult, ServerLog } from '@/types/types';
+import { translate } from '@vitalets/google-translate-api';
+import { serperSearchWithRelated } from './tools/searchProviders';
 
 // Використовує обмеження швидкості Upstash, щоб обмежити кількість запитів на користувача
 let ratelimit: Ratelimit | undefined;
@@ -56,7 +58,9 @@ async function getMessageLanguage(data: { inputs: string }) {
       }
     );
     const result: GetLangResponse[][] = await response.json();
-    
+
+    // console.log({result})
+
     const final = result[0][0].label.substring(0, 2)
     if (!final) {
       return 'no'
@@ -71,7 +75,7 @@ async function getMessageLanguage(data: { inputs: string }) {
 
 // 2.5 Set up the embeddings model based on the messageSettings
 const getEmbeddings = (model: string) => {
-  let embeddings: OllamaEmbeddings | OpenAIEmbeddings | HuggingFaceInferenceEmbeddings | NomicEmbeddings | 
+  let embeddings: OllamaEmbeddings | OpenAIEmbeddings | HuggingFaceInferenceEmbeddings | NomicEmbeddings |
     MistralAIEmbeddings;
 
   if (model.startsWith('nomic')) {
@@ -89,42 +93,6 @@ const getEmbeddings = (model: string) => {
   }
 
   return embeddings
-}
-
-// 4. Fetch search results from Brave Search API
-export async function getSourcesBrave(message: string, numberOfPagesToScan = config.numberOfPagesToScan): Promise<SearchResult[]> {
-  try {
-    const response = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(message)}&count=${numberOfPagesToScan}`, {
-      headers: {
-        'Accept': 'application/json',
-        'Accept-Encoding': 'gzip',
-        "X-Subscription-Token": process.env.BRAVE_SEARCH_API_KEY as string
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Помилка HTTP до Brave Search API! Функція getSourcesBrave: status: ${response.status}`);
-    }
-
-    const jsonResponse = await response.json();
-
-    if (!jsonResponse.web || !jsonResponse.web.results) {
-      throw new Error('Невірний формат відповіді Brave Search API');
-    }
-
-    const final = jsonResponse.web.results.map((result: any): SearchResult => ({
-      title: result.title,
-      link: result.url,
-      snippet: result.description,
-      favicon: result.profile.img
-    }));
-
-    return final;
-
-  } catch (error) {
-    console.error('Помилка запиту до Brave Search API:', error);
-    throw error;
-  }
 }
 
 
@@ -194,7 +162,7 @@ export async function processAndVectorizeContent(
 
   const embeddings = getEmbeddings(embeddingsModel)
   let vectorStore: MemoryVectorStore;
-  
+
   try {
     for (let i = 0; i < contents.length; i++) {
       const content = contents[i];
@@ -208,7 +176,7 @@ export async function processAndVectorizeContent(
 
           // у моделі mistral є обмеження у ~16,000 tokens
           if (embeddingsModel === 'mistral') {
-            splitText = splitText.slice(0,42)
+            splitText = splitText.slice(0, 42)
           }
 
           try {
@@ -222,7 +190,7 @@ export async function processAndVectorizeContent(
           // console.log('=========vectorStore=======')
           // console.log(vectorStore)
           // console.log('=========vectorStore=======')
-          
+
           // MemoryVectorStore — це ефемерне векторне сховище в пам’яті, яке зберігає вбудовування в пам’яті та виконує точний лінійний пошук найбільш схожих вбудовувань. Метрикою подібності за замовчуванням є косинусна подібність, але її можна змінити на будь-яку з метрик подібності, підтримуваних ml-distance.
           // це вже відбувається на нашому  сервері
           return await vectorStore.similaritySearch(query, numberOfSimilarityResults);
@@ -340,52 +308,6 @@ export async function getVideos(message: string): Promise<{ imageUrl: string, li
   }
 }
 
-// 8. Fetch search results from Google Serper API
-export async function getSourcesSerper(message: string, locale: string, numberOfPagesToScan = config.numberOfPagesToScan): Promise<SearchResult[] | null> {
-  const url = 'https://google.serper.dev/search';
-
-  const data = JSON.stringify({
-    "q": message + ' -filetype:pdf AND -filetype:doc AND -filetype:docx',
-    "num": numberOfPagesToScan,
-  });
-
-  const requestOptions: RequestInit = {
-    method: 'POST',
-    headers: {
-      'X-API-KEY': process.env.SERPER_API as string,
-      'Content-Type': 'application/json'
-    },
-    body: data
-  };
-
-  try {
-    const response = await fetch(url, requestOptions);
-    if (!response.ok) {
-      console.error(`Відповідь мережі не ОК. Функція getSourcesSerper. Status: ${response.status}`);
-      return null
-    }
-    const jsonResponse = await response.json();
-    
-    if (!jsonResponse.organic.length) {
-      return null
-    }
-
-    const final = jsonResponse.organic.map((result: any): SearchResult => ({
-      title: result.title,
-      link: result.link,
-      snippet: result.snippet,
-      favicon: 'https://www.gstatic.com/devrel-devsite/prod/v7ec1cdbf90989ab082f30bf9b9cbe627804848c18b70d722062aeb6c6d8958b5/developers/images/favicon-new.png',
-    }));
-
-    return final;
-
-  } catch (error) {
-    console.error('Проблема запиту у функції getSourcesSerper::', error);
-    return null
-  }
-}
-
-
 
 // 9. Generate follow-up questions using OpenAI API
 // Генерування додаткових питань за допомогою  OpenAI API
@@ -415,9 +337,9 @@ const relevantQuestions = async (sources: SearchResult[], inferenceModel: string
 };
 
 // LOG===============
-const streamLog = (streamable: any, {title, fTitle, predTime, percent} : {title: string, fTitle?: string, predTime: number, percent: number}) => {
-  console.log(fTitle ? fTitle : title, `: ${Date.now()-predTime}`)
-  return streamable.update({'log': {title, fTitle, time: Date.now()-predTime, percent}})
+const streamLog = (streamable: any, { title, fTitle, predTime, percent }: { title: string, fTitle?: string, predTime: number, percent: number }) => {
+  console.log(fTitle ? fTitle : title, `: ${Date.now() - predTime}`)
+  return streamable.update({ 'log': { title, fTitle, time: Date.now() - predTime, percent } })
 }
 
 // 10. Main action function that orchestrates the entire process
@@ -439,18 +361,26 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     }
 
     const startTime = Date.now()
-    streamLog(streamable,{  title: 'Початок запиту: ', predTime: 0, percent: 10 } )
-    
-    // const messageLanguage = messageLang === 'auto'
-    //   ? await getMessageLanguage({ "inputs": message })
-    //   : messageLang
-    const questionLanguage = messageLang
-    // console.log({ messageLanguage })
-    // streamLog(streamable, 'messageLanguage: ' + messageLanguage });
+    streamLog(streamable, { title: 'Початок запиту: ', predTime: 0, percent: 10 })
+
+    const questionLanguage = messageLang === 'auto'
+      ? await getMessageLanguage({ "inputs": message })
+      : messageLang
+      
+    streamLog(streamable, { title: `Мова запиту: ${questionLanguage}`, predTime: startTime, percent: 15 })
 
     if (questionLanguage != searchLang) {
-      userMessage = await translateText(message, questionLanguage, searchLang)
-      streamLog(streamable, { title: 'Перекладено запит: ',fTitle: `Перекладений запит: ${userMessage}`, predTime: startTime, percent: 20 })
+      try {
+        const translatedRaw = await translate(message, { to: searchLang })
+        userMessage = translatedRaw.text ? translatedRaw.text : message
+      } catch (error: any) {
+        if (error.name === 'TooManyRequestsError') { // якщо виникатиме ця помилка, то треба зробити запит через проксі. Є приклад в репо
+          streamLog(streamable, { title: 'Помилка перекладу: Google-translate-api: TooManyRequestsError', predTime: startTime, percent: 20 })
+        } else {
+          streamLog(streamable, { title: 'Помилка перекладу: ' + JSON.stringify(error), fTitle: `Error translate() ${JSON.stringify(error)}`, predTime: startTime, percent: 20 })
+        }
+      }
+      streamLog(streamable, { title: 'Перекладено запит: ', fTitle: `Перекладений запит: ${userMessage}`, predTime: startTime, percent: 20 })
       // streamable.update({ 'info': `Перекладений запит: ${userMessage}` });
     }
 
@@ -467,15 +397,18 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       }
     })
 
-    const [images, sources, videos /*,condtionalFunctionCallUI*/] = await Promise.all([
+    const [images, sourcesWithRelated, videos /*,condtionalFunctionCallUI*/] = await Promise.all([
       showImages ? getImages(userMessage) : null,
-      searchSystem === 'google' ? getSourcesSerper(userMessage, searchLang, pagesToScan) : getSourcesBrave(userMessage, pagesToScan),
+      serperSearchWithRelated(userMessage, searchLang, pagesToScan),
       showVideo ? getVideos(userMessage) : null,
       // functionCalling(userMessage),
     ]);
 
+    const sources = sourcesWithRelated[0]
+    const related = sourcesWithRelated[1] // related questions from Google Serper Api
+
     const endGetsTime = Date.now()
-    streamLog(streamable,{title: 'Отримую тексти сторінок: ', fTitle: 'endGetSources', predTime:  translateMessageTime, percent: 40})
+    streamLog(streamable, { title: 'Отримую тексти сторінок: ', fTitle: 'endGetSources', predTime: translateMessageTime, percent: 40 })
 
 
     showImages ? streamable.update({ 'images': images }) : null;
@@ -484,7 +417,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     // if (config.useFunctionCalling) {
     //   streamable.update({ 'conditionalFunctionCallUI': condtionalFunctionCallUI });
     // }
-    
+
     let vectorResults;
 
     let get10BlueLinksTime = Date.now();
@@ -493,7 +426,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       const html = await get10BlueLinksContents(sources, timeoutGetBlueLinks);
 
       get10BlueLinksTime = Date.now()
-      streamLog(streamable, { title: `Векторізую тексти: модель ${embeddingsModel}`, fTitle: 'get10BlueLinksContents', predTime: endGetsTime, percent: 50 })
+      streamLog(streamable, { title: `Векторізую тексти`, fTitle: `get10BlueLinksContents: модель ${embeddingsModel}`, predTime: endGetsTime, percent: 50 })
 
       // console.log('=======html========')
       // console.log({htmlLength: html[0].html.length})
@@ -540,18 +473,20 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     const relevantQuestionsTime = Date.now()
     streamLog(streamable, { title: 'Додаю пов\`язані питання', fTitle: 'endShowAnswer', predTime: chatCompletionTime, percent: 90 })
 
-    if (showFollowup && sources) {
+    if (related) {
+      streamable.update({ 'followUp': related });
+    } else if (showFollowup && sources) {
       try {
         const followUp = await relevantQuestions(sources, inferenceModel, messageLang);
         streamable.update({ 'followUp': followUp });
       }
       catch (error) {
         console.log('Помилка relevantQuestions: ', error)
-        streamLog(streamable, { title: 'Помилка отримання додаткових запитань',fTitle:'relevantQuestionsError', predTime: relevantQuestionsTime, percent: 95 })
+        streamLog(streamable, { title: 'Помилка отримання додаткових запитань', fTitle: 'relevantQuestionsError', predTime: relevantQuestionsTime, percent: 95 })
       }
     }
 
-    streamLog(streamable, { title: 'Час запиту: ', predTime:  startTime, percent: 100 })
+    streamLog(streamable, { title: 'Час запиту: ', predTime: startTime, percent: 100 })
 
     streamable.done({ status: 'done' });
   })();
