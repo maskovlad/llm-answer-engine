@@ -19,13 +19,8 @@ export default function LocaleSwitcher({ curLocale, style, locales, domain }: { 
   }
 
   const changeLocale = async (locale: Locale) => {
-    if (process.env.NODE_ENV === "production") {
-      document.cookie =
-        `NAIDA_LOCALE=${locale};domain=.${process.env.NEXT_PUBLIC_ROOT_DOMAIN};max-age=31536000; path=/`
-    } else {
       document.cookie =
         `NAIDA_LOCALE=${locale};max-age=31536000; path=/`
-    }
   }
 
   return (
