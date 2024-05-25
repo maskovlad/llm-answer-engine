@@ -1,8 +1,12 @@
 import { MessageSettings } from "@/types/types";
 import { useEffect, useState } from "react";
 import { defaultMessageSettings } from "@/lib/message-settings";
+import { Locale } from "@/i18n-config";
+import { getDictionary } from "./dic";
 
-const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
+const Sidebar = ({ isOpen, onClose, lang }: { isOpen: boolean, onClose: any, lang: Locale }) => {
+
+  const t = getDictionary(lang)
 
   const [settings, setSettings] = useState<MessageSettings>(defaultMessageSettings);
 
@@ -51,7 +55,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
     >
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className="text-lg font-semibold">Settings</h2>
+          <h2 className="text-lg font-semibold">{t.Settings}</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-600 focus:outline-none"
@@ -76,7 +80,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
         <div className="flex-1 px-4 py-6 overflow-y-auto">
           {/* Мова Запиту */}
           <div className="my-4">
-            <label className="block mb-2 font-semibold">Мова Запиту</label>
+            <label className="block mb-2 font-semibold">{t.queryLang}</label>
             <select
               value={settings.messageLang}
               onChange={(e) => handleSettingsChange([{ field: 'messageLang', value: e.target.value }])}
@@ -90,7 +94,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
           </div>
           {/* Мова пошуку */}
           <div className="my-4">
-            <label className="block mb-2 font-semibold">Мова пошуку</label>
+            <label className="block mb-2 font-semibold">{t.searchLang}</label>
             <select
               value={settings.searchLang}
               onChange={(e) => {
@@ -105,7 +109,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
           </div>
           {/* Мова відповіді */}
           <div className="my-4">
-            <label className="block mb-2 font-semibold">Мова відповіді</label>
+            <label className="block mb-2 font-semibold">{t.answerLang}</label>
             <select
               value={settings.answerLang}
               onChange={(e) => handleSettingsChange([{ field: 'answerLang', value: e.target.value}])}
@@ -120,7 +124,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
         <hr />
         {/* Пошукова система */}
         <div className="my-4">
-          <label className="block mb-2 font-semibold">Пошукова система</label>
+          <label className="block mb-2 font-semibold">{t.searchSystem}</label>
           <select
             value={settings.searchSystem}
             onChange={(e) => handleSettingsChange([{ field: 'searchSystem', value: e.target.value}])}
@@ -136,7 +140,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
 
       {/* Embeddings Model */}
       <div className="my-4">
-        <label className="block mb-2 font-semibold">Embeddings Model</label>
+        <label className="block mb-2 font-semibold">{t.embeddingsModel}</label>
         <select
           value={settings.embeddingsModel}
           onChange={(e) => handleSettingsChange([{ field: 'embeddingsModel', value: e.target.value }])}
@@ -150,7 +154,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
       </div>
       {/* Inference Model */}
       <div className="my-4">
-        <label className="block mb-2 font-semibold">Inference Model</label>
+        <label className="block mb-2 font-semibold">{t.InferenceModel}</label>
         <select
           value={settings.inferenceModel}
           onChange={(e) => handleSettingsChange([{ field: 'inferenceModel', value: e.target.value }])}
@@ -166,7 +170,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
 
       <hr />
 
-      <label className="block mb-4 font-semibold">Показувати джерела</label>
+      <label className="block mb-4 font-semibold">{t.showSources}</label>
       <div className="my-4">
         <label className="inline-flex items-center cursor-pointer">
           <input type="checkbox"
@@ -174,7 +178,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
             checked={settings.showSources}
             onChange={(e) => handleSettingsChange([{ field: 'showSources', value: e.target.checked.valueOf() }])} />
           <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Посилання</span>
+          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">{t.links}</span>
         </label>
       </div>
       {/* Зображення */}
@@ -185,7 +189,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
             checked={settings.showImages}
             onChange={(e) => handleSettingsChange([{ field: 'showImages', value: e.target.checked.valueOf() }])} />
           <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Зображення</span>
+          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">{t.images}</span>
         </label>
       </div>
       {/* Відео */}
@@ -196,7 +200,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
             checked={settings.showVideo}
             onChange={(e) => handleSettingsChange([{ field: 'showVideo', value: e.target.checked.valueOf() }])} />
           <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Відео</span>
+          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">{t.videos}</span>
         </label>
       </div>
       {/* Дод. питання */}
@@ -207,17 +211,17 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
             checked={settings.showFollowup}
             onChange={(e) => handleSettingsChange([{ field: 'showFollowup', value: e.target.checked.valueOf() }])} />
           <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Дод. питання</span>
+          <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">{t.relevants}</span>
         </label>
       </div>
 
       <hr />
 
       <div className="my-4">
-        <h3 className="mb-2 font-semibold">Розширені опції (Pro)</h3>
+        <h3 className="mb-2 font-semibold">{t.AdvancedOptions}</h3>
         {/* Оптимізація запит */}
         <div className="my-4">
-          <label className="block mb-4 font-semibold">Оптимізація запиту</label>
+          <label className="block mb-4 font-semibold">{t.optimization}</label>
           <label className="inline-flex items-center cursor-pointer">
             <input type="checkbox"
               className="sr-only peer"
@@ -229,7 +233,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
         {/* Text Chunk Size */}
         <div className="mb-4">
           <label className="block mb-2 font-semibold">
-            Text Chunk Size: {settings.textChunkSize}
+            {t.chunkSize}: {settings.textChunkSize}
           </label>
           <input
             type="range"
@@ -244,7 +248,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
         {/* Text Chunk Overlap */}
         <div className="mb-4">
           <label className="block mb-2 font-semibold">
-            Text Chunk Overlap: {settings.textChunkOverlap}
+            {t.TextChunkOverlap}: {settings.textChunkOverlap}
           </label>
           <input
             type="range"
@@ -259,7 +263,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
         {/* Number of Similarity Results */}
         <div className="mb-4">
           <label className="block mb-2 font-semibold">
-            Number of Similarity Results: {settings.similarityResults}
+            {t.NumberSimilarityResults}: {settings.similarityResults}
           </label>
           <input
             type="range"
@@ -274,7 +278,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
         {/* Number of Pages to Scan */}
         <div className="mb-4">
           <label className="block mb-2 font-semibold">
-            Number of Pages to Scan: {settings.pagesToScan}
+            {t.NumberPagesScan}: {settings.pagesToScan}
           </label>
           <input
             type="range"
@@ -289,7 +293,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: any }) => {
         {/*Таймаут сканування посилань */}
         <div className="mb-4">
           <label className="block mb-2 font-semibold">
-            Таймаут сканування посилань(ms): {settings.timeoutGetBlueLinks}
+            {t.timeoutScan}: {settings.timeoutGetBlueLinks}
           </label>
           <input
             type="range"

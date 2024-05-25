@@ -8,6 +8,7 @@ interface Message {
   type: string;
   content: string;
   userMessage: string;
+  translatedMessage: string;
   images: Image[];
   videos: Video[];
   followUp: FollowUp | null;
@@ -30,6 +31,7 @@ interface Message {
 interface StreamMessage {
   searchResults?: any;
   userMessage?: string;
+  translatedMessage: string;
   llmResponse?: string;
   llmResponseEnd?: boolean;
   images?: any;

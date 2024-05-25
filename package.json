@@ -39,6 +39,7 @@
     "langchain": "^0.1.28",
     "leaflet": "^1.9.4",
     "markdown-to-jsx": "^7.4.7",
+    "negotiator": "^0.6.3",
     "next": "14.1.2",
     "next-themes": "^0.2.1",
     "openai": "^4.28.4",
@@ -57,6 +58,7 @@
   },
   "devDependencies": {
     "@types/d3-scale": "^4.0.8",
+    "@types/negotiator": "^0.6.3",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

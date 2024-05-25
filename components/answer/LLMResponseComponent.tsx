@@ -1,3 +1,5 @@
+import { digitalDog } from '@/public';
+
 // 1. Define the 'LLMResponseComponentProps' interface with properties for 'llmResponse', 'currentLlmResponse', and 'index'
 interface LLMResponseComponentProps {
     llmResponse: string;
@@ -57,9 +59,8 @@ const LLMResponseComponent = ({ llmResponse, currentLlmResponse, index }: LLMRes
                                 },
                             },
                         }}>{llmResponse}</Markdown>
-                        {/* {llmResponse} */}
                         <div className="flex items-center justify-end">
-                            <img src="./powered-by-groq.svg" alt="powered by groq" className='mt-2 h-6' />
+                            <img src={digitalDog.src} alt="powered by NAIDA" className='mt-2 h-6' />
                         </div>
                     </div>
                 </div>

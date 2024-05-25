@@ -21,6 +21,9 @@ import { translateText } from '@/lib/utils/translate-text';
 import { ContentResult, GetLangResponse, MessageSettings, SearchResult, ServerLog } from '@/types/types';
 import { translate } from '@vitalets/google-translate-api';
 import { serperSearchWithRelated } from './tools/searchProviders';
+import { Locale } from "@/i18n-config";
+import { getDictionary } from "./dic";
+
 
 // Використовує обмеження швидкості Upstash, щоб обмежити кількість запитів на користувача
 let ratelimit: Ratelimit | undefined;
@@ -343,9 +346,11 @@ const streamLog = (streamable: any, { title, fTitle, predTime, percent }: { titl
 }
 
 // 10. Main action function that orchestrates the entire process
-async function myAction(message: string, messageSettings: MessageSettings): Promise<any> {
+async function myAction(message: string, messageSettings: MessageSettings, lang: Locale): Promise<any> {
   "use server";
 
+  const t = getDictionary(lang)
+  
   const streamable = createStreamableValue({});
   let userMessage = message; // якщо потрібно буде оптимізувати чи перекласти запит
   const { showImages, showVideo, answerLang, embeddingsModel, messageLang, inferenceModel, pagesToScan, searchLang, searchSystem, showFollowup, showSources, similarityResults, textChunkOverlap, messageOptimization, textChunkSize, timeoutGetBlueLinks } = messageSettings;
@@ -361,18 +366,21 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     }
 
     const startTime = Date.now()
-    streamLog(streamable, { title: 'Початок запиту: ', predTime: 0, percent: 10 })
+    streamLog(streamable, { title: t.startQuery, predTime: 0, percent: 10 })
 
     const questionLanguage = messageLang === 'auto'
       ? await getMessageLanguage({ "inputs": message })
       : messageLang
       
-    streamLog(streamable, { title: `Мова запиту: ${questionLanguage}`, predTime: startTime, percent: 15 })
+    streamLog(streamable, { title: ` ${t.МоваЗапиту}`, predTime: startTime, percent: 15 })
 
     if (questionLanguage != searchLang) {
       try {
         const translatedRaw = await translate(message, { to: searchLang })
         userMessage = translatedRaw.text ? translatedRaw.text : message
+        streamable.update({ 'translatedMessage': translatedRaw.text ? translatedRaw.text : '' })
+        streamLog(streamable, { title: 'Перекладено запит: ', fTitle: `Перекладений запит: ${userMessage}`, predTime: startTime, percent: 20 })
+        // streamable.update({ 'info': `Перекладений запит: ${userMessage}` });
       } catch (error: any) {
         if (error.name === 'TooManyRequestsError') { // якщо виникатиме ця помилка, то треба зробити запит через проксі. Є приклад в репо
           streamLog(streamable, { title: 'Помилка перекладу: Google-translate-api: TooManyRequestsError', predTime: startTime, percent: 20 })
@@ -380,12 +388,10 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
           streamLog(streamable, { title: 'Помилка перекладу: ' + JSON.stringify(error), fTitle: `Error translate() ${JSON.stringify(error)}`, predTime: startTime, percent: 20 })
         }
       }
-      streamLog(streamable, { title: 'Перекладено запит: ', fTitle: `Перекладений запит: ${userMessage}`, predTime: startTime, percent: 20 })
-      // streamable.update({ 'info': `Перекладений запит: ${userMessage}` });
     }
 
     const translateMessageTime = Date.now()
-    streamLog(streamable, { title: 'Шукаю інформацію по твоєму запиту: ', predTime: startTime, percent: 30 })
+    streamLog(streamable, { title: t.ШукаюІнформацію, predTime: startTime, percent: 30 })
 
     // передаємо на клієнтські компоненти налаштування
     streamable.update({
@@ -408,7 +414,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     const related = sourcesWithRelated[1] // related questions from Google Serper Api
 
     const endGetsTime = Date.now()
-    streamLog(streamable, { title: 'Отримую тексти сторінок: ', fTitle: 'endGetSources', predTime: translateMessageTime, percent: 40 })
+    streamLog(streamable, { title: t.Отримуютексти, fTitle: 'endGetSources', predTime: translateMessageTime, percent: 40 })
 
 
     showImages ? streamable.update({ 'images': images }) : null;
@@ -426,7 +432,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       const html = await get10BlueLinksContents(sources, timeoutGetBlueLinks);
 
       get10BlueLinksTime = Date.now()
-      streamLog(streamable, { title: `Векторізую тексти`, fTitle: `get10BlueLinksContents: модель ${embeddingsModel}`, predTime: endGetsTime, percent: 50 })
+      streamLog(streamable, { title: t.ВбудовуванняТексту, fTitle: `get10BlueLinksContents: модель ${embeddingsModel}`, predTime: endGetsTime, percent: 50 })
 
       // console.log('=======html========')
       // console.log({htmlLength: html[0].html.length})
@@ -440,7 +446,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     }
 
     const processAndVectorizeContentTime = Date.now()
-    streamLog(streamable, { title: 'Формую відповідь: ', fTitle: 'processAndVectorizeContent', predTime: get10BlueLinksTime, percent: 60 })
+    streamLog(streamable, { title: t.Формуювідповідь, fTitle: 'processAndVectorizeContent', predTime: get10BlueLinksTime, percent: 60 })
 
     const needTranslate = (answerLang != 'en') ? (` AND ALWAYS IN ${answerLang === 'uk' ? 'UKRAINIAN' : 'RUSSIAN'}`) : " AND ALWAYS IN ENGLISH"
 
@@ -459,7 +465,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
 
 
     const chatCompletionTime = Date.now()
-    streamLog(streamable, { title: 'Відповідаю: ', fTitle: 'chatCompletion', predTime: processAndVectorizeContentTime, percent: 70 })
+    streamLog(streamable, { title: t.Відповідаю, fTitle: 'chatCompletion', predTime: processAndVectorizeContentTime, percent: 70 })
 
 
     for await (const chunk of chatCompletion) {
@@ -471,7 +477,7 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
     }
 
     const relevantQuestionsTime = Date.now()
-    streamLog(streamable, { title: 'Додаю пов\`язані питання', fTitle: 'endShowAnswer', predTime: chatCompletionTime, percent: 90 })
+    streamLog(streamable, { title: t.AddingRelevant, fTitle: 'endShowAnswer', predTime: chatCompletionTime, percent: 90 })
 
     if (related) {
       streamable.update({ 'followUp': related });
@@ -482,11 +488,11 @@ async function myAction(message: string, messageSettings: MessageSettings): Prom
       }
       catch (error) {
         console.log('Помилка relevantQuestions: ', error)
-        streamLog(streamable, { title: 'Помилка отримання додаткових запитань', fTitle: 'relevantQuestionsError', predTime: relevantQuestionsTime, percent: 95 })
+        streamLog(streamable, { title: t.RelevantError, fTitle: 'relevantQuestionsError', predTime: relevantQuestionsTime, percent: 95 })
       }
     }
 
-    streamLog(streamable, { title: 'Час запиту: ', predTime: startTime, percent: 100 })
+    streamLog(streamable, { title: t.Часзапиту, predTime: startTime, percent: 100 })
 
     streamable.done({ status: 'done' });
   })();

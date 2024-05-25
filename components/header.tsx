@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { logo } from '@/public'
 import Sidebar from './sidebar';
+import { Locale } from '@/i18n-config';
+import LocaleSwitcher from './locale-switcher';
 
-export function Header() {
+export function Header({lang}: {lang: Locale}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -24,6 +26,7 @@ export function Header() {
         </span>
 
         <div className="flex items-center justify-end space-x-2">
+          <LocaleSwitcher curLocale={lang} />
           <Button variant="outline" asChild onClick={toggleSidebar}>
             <a
               className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-black dark:text-white font-semibold py-2 px-4 rounded shadow"
@@ -33,7 +36,7 @@ export function Header() {
           </Button>
         </div>
       </header>
-      <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
+      <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} lang={lang} />
     </>
   );
 }

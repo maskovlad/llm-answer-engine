@@ -31,9 +31,10 @@ import { defaultMessageSettings } from '@/lib/message-settings';
 import Log from '@/components/Log';
 import * as Toast from '@radix-ui/react-toast';
 import * as Progress from '@radix-ui/react-progress';
+import { Locale } from '@/i18n-config';
 
 
-export default function Page() {
+export default function Page({params: { lang }}: {params: { lang: Locale };}) {
   // 3. Set up action that will be used to stream all the messages
   const { myAction } = useActions<typeof AI>();
   // 4. Set up form submission handling
@@ -104,6 +105,7 @@ export default function Page() {
       id: newMessageId,
       type: 'userMessage',
       userMessage: userMessage,
+      translatedMessage: '',
       content: '',
       images: [],
       videos: [],
@@ -132,7 +134,7 @@ export default function Page() {
 
     // читаємо стрім з бекенда
     try {
-      const streamableValue = await myAction(userMessage, messageSettings);
+      const streamableValue = await myAction(userMessage, messageSettings, lang);
 
       let llmResponseString = "";
 
@@ -172,6 +174,9 @@ export default function Page() {
             }
             if (typedMessage.followUp) {
               currentMessage.followUp = typedMessage.followUp;
+            }
+            if (typedMessage.translatedMessage) {
+              currentMessage.translatedMessage = typedMessage.translatedMessage;
             }
             // Optional Function Calling + Conditional UI
             // if (typedMessage.conditionalFunctionCallUI) {
@@ -221,7 +226,7 @@ export default function Page() {
     setLog([])
   }
 
-  // console.log(progress)
+  // console.log(messages)
   return (
     <div>
 
@@ -264,6 +269,7 @@ export default function Page() {
                 {message.status && message.status === 'rateLimitReached' && <RateLimit />}
 
                 {message.type === 'userMessage' && <UserMessageComponent message={message.userMessage} />}
+                {message.translatedMessage.length > 0 && <UserMessageComponent message={message.translatedMessage} translated={true} />}
 
                 {message.ticker && message.ticker.length > 0 && (
                   <FinancialChart key={`financialChart-${index}`} ticker={message.ticker} />
@@ -303,7 +309,7 @@ export default function Page() {
       <div className={`px-2 fixed inset-x-0 z-20 bottom-0 w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4`}>
         <div className="mx-auto max-w-xl sm:px-4 ">
           {messages.length === 0 && (
-            <InitialQueries questions={['How is apple\'s stock doing these days?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
+            <InitialQueries questions={['How is apple\'s stock doing these days?','Які основні твори Тараса Шевченка?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
           )}
 
           <form
