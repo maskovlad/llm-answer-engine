@@ -3,20 +3,20 @@ import { NextRequest, NextResponse, userAgent } from "next/server";
 import { i18n } from './i18n-config'
 import Negotiator from 'negotiator'
 
-// export const config = {
-//   matcher: [
-//     /*
-//      - Match all paths except for:
-//      - 1. /api routes
-//      - 2. /_next (Next.js internals)
-//      - 3. /_static (inside /public)
-//      - 4. all root files inside /public (e.g. /favicon.ico)
-//      */
-//     "/((?!api/|_next/|_static/|assets/|_vercel|[\\w-]+\\.\\w+).*)",
-//   ],
-// };
+export const config = {
+  matcher: [
+    /*
+     - Match all paths except for:
+     - 1. /api routes
+     - 2. /_next (Next.js internals)
+     - 3. /_static (inside /public)
+     - 4. all root files inside /public (e.g. /favicon.ico)
+     */
+    "/((?!api/|_next/|_static/|assets/|_vercel|[\\w-]+\\.\\w+).*)",
+  ],
+};
 
-// const VERCEL_DEPLOYMENT = !!process.env.VERCEL_URL;
+const VERCEL_DEPLOYMENT = !!process.env.VERCEL_URL;
 
 function getLocale(request: NextRequest): string {
 
@@ -71,14 +71,14 @@ export function middleware(request: NextRequest) {
   return NextResponse.redirect(request.nextUrl)
 }
 
-export const config = {
-  matcher: [
-    // Skip all internal paths (_next)
-    '/((?!_next).*)',
-    // Optional: only run on root (/) URL
-    // '/'
-  ],
-}
+// export const config = {
+//   matcher: [
+//     // Skip all internal paths (_next)
+//     '/((?!_next).*)',
+//     // Optional: only run on root (/) URL
+//     // '/'
+//   ],
+// }
 
 
 // export async function middleware(req: NextRequest) {
