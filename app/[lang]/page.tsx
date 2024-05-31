@@ -32,9 +32,11 @@ import Log from '@/components/Log';
 import * as Toast from '@radix-ui/react-toast';
 import * as Progress from '@radix-ui/react-progress';
 import { Locale } from '@/i18n-config';
+import { Flex, Heading } from '@radix-ui/themes';
+import { HamburgerMenuIcon } from '@radix-ui/react-icons';
 
 
-export default function Page({params: { lang }}: {params: { lang: Locale };}) {
+export default function Page({ params: { lang } }: { params: { lang: Locale }; }) {
   // 3. Set up action that will be used to stream all the messages
   const { myAction } = useActions<typeof AI>();
   // 4. Set up form submission handling
@@ -49,6 +51,11 @@ export default function Page({params: { lang }}: {params: { lang: Locale };}) {
   const [showLog, setShowLog] = useState(false);
   const [openToast, setOpenToast] = useState(false);
   const [progress, setProgress] = useState<number>(0)
+
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  const leftSidebarRef = useRef<HTMLDivElement>(null);
+
+
 
   // const updateString = (index: number, newString: string) => {
   //   console.log(`newString: ${newString}`)
@@ -116,7 +123,7 @@ export default function Page({params: { lang }}: {params: { lang: Locale };}) {
       shopping: [] as Shopping[],
       status: '',
       ticker: undefined,
-      settings: {video: true, image:true, sources:true, relevant:true},
+      settings: { video: true, image: true, sources: true, relevant: true },
       // log: [],
     };
 
@@ -226,12 +233,48 @@ export default function Page({params: { lang }}: {params: { lang: Locale };}) {
     setLog([])
   }
 
-  // console.log(messages)
+  const handleOutsideClick = (event: MouseEvent) => {
+    if (leftSidebarRef.current && !leftSidebarRef.current.contains(event.target as Node)) {
+      setIsLeftSidebarOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLeftSidebarOpen) {
+      document.addEventListener('click', handleOutsideClick);
+    } else {
+      document.removeEventListener('click', handleOutsideClick);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [isLeftSidebarOpen]);
+
+
+
+  // console.log(message.shopping || message.settings.video || message.settings.image || message.places)
   return (
-    <div>
+    <Flex height='100vh'>
+
+      <Button
+        variant='outline'
+        className="lg:hidden fixed top-4 left-4 z-40"
+        onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
+      >
+        <HamburgerMenuIcon />
+      </Button>
+      {/* Left Sidebar */}
+      <Flex
+        ref={leftSidebarRef}
+        className={`fixed z-30 inset-y-0 left-0 w-64 bg-gray-800 text-white transform ${isLeftSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } transition-transform duration-300 ease-in-out lg:static lg:translate-x-0`}
+      >
+        <Heading className="p-4">Left Sidebar Content</Heading>
+      </Flex>
 
       {/* LOG */}
-      <div className={`shadow-lg transition-transform duration-300 ease-in-out transform ${!showLog ? '-translate-x-[262px]' : 'translate-x-0'} knopka fixed bottom-[0vh] left-[262px] `}>
+      {/*      <div className={`shadow-lg transition-transform duration-300 ease-in-out transform ${!showLog ? '-translate-x-[262px]' : 'translate-x-0'} knopka fixed bottom-[0vh] left-[262px] `}>
         <button
           onClick={toggleLogSidebar}
           className="text-gray-500 hover:text-gray-600 focus:outline-none"
@@ -240,9 +283,9 @@ export default function Page({params: { lang }}: {params: { lang: Locale };}) {
         </button>
       </div>
       <Log text={log} isOpen={showLog} clear={clearLog} />
-
+*/}
       {/* <Toast.Provider swipeDirection="right"> */}
-        {/* <button
+      {/* <button
           className="inline-flex items-center justify-center rounded font-medium text-[15px] px-[15px] leading-[35px] h-[35px] bg-white text-violet11 shadow-[0_2px_10px] shadow-blackA4 outline-none hover:bg-mauve3 focus:shadow-[0_0_0_2px] focus:shadow-black"
           onClick={() => {
             setOpenToast(false);
@@ -250,7 +293,7 @@ export default function Page({params: { lang }}: {params: { lang: Locale };}) {
         >
           Close
         </button> */}
-        {/* <Toast.Root className="bg-green rounded-md shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] p-[15px] grid [grid-template-areas:_'title_action'_'description_action'] grid-cols-[auto_max-content] gap-x-[15px] items-center data-[state=open]:animate-slideIn data-[state=closed]:animate-hide data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out] data-[swipe=end]:animate-swipeOut"
+      {/* <Toast.Root className="bg-green rounded-md shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] p-[15px] grid [grid-template-areas:_'title_action'_'description_action'] grid-cols-[auto_max-content] gap-x-[15px] items-center data-[state=open]:animate-slideIn data-[state=closed]:animate-hide data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out] data-[swipe=end]:animate-swipeOut"
           open={openToast}
           onOpenChange={setOpenToast}>
           <Toast.Title className="[grid-area:_title] mb-[5px] font-medium text-slate12 text-[15px]">Title</Toast.Title>
@@ -258,58 +301,68 @@ export default function Page({params: { lang }}: {params: { lang: Locale };}) {
         <Toast.Viewport className="[--viewport-padding:_25px] fixed bottom-0 right-0 flex flex-col p-[var(--viewport-padding)] gap-[10px] w-[390px] max-w-[100vw] m-0 list-none z-[2147483647] outline-none" />
       </Toast.Provider> */}
 
+      <Flex className="flex-1 flex flex-col lg:flex-row">
+        {/* Main Section */}
+        <Flex className="flex-1 p-4">
+          {messages.length > 0 && (
+            <div className="flex flex-col">
 
-      {messages.length > 0 && (
-        <div className="flex flex-col">
+              {messages.map((message, index) => (
+                <div key={`message-${index}`} className="flex flex-col md:flex-row">
+                  <div className={`primary-content w-full ${(message.shopping?.length || message.settings.video || message.settings.image || message.places?.length) ? 'md:w-3/4 md:pr-2' : ''} `}>
 
-          {messages.map((message, index) => (
-            <div key={`message-${index}`} className="flex flex-col md:flex-row">
-              <div className="w-full md:w-3/4 md:pr-2">
+                    {message.status && message.status === 'rateLimitReached' && <RateLimit />}
 
-                {message.status && message.status === 'rateLimitReached' && <RateLimit />}
+                    {message.type === 'userMessage' && <UserMessageComponent message={message.userMessage} />}
+                    {message.translatedMessage.length > 0 && <UserMessageComponent message={message.translatedMessage} translated={true} />}
 
-                {message.type === 'userMessage' && <UserMessageComponent message={message.userMessage} />}
-                {message.translatedMessage.length > 0 && <UserMessageComponent message={message.translatedMessage} translated={true} />}
+                    {message.ticker && message.ticker.length > 0 && (
+                      <FinancialChart key={`financialChart-${index}`} ticker={message.ticker} />
+                    )}
 
-                {message.ticker && message.ticker.length > 0 && (
-                  <FinancialChart key={`financialChart-${index}`} ticker={message.ticker} />
-                )}
+                    {message.settings.sources && message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
 
-                {message.settings.sources && message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
+                    {message.places && message.places.length > 0 && (
+                      <MapComponent key={`map-${index}`} places={message.places} />
+                    )}
 
-                {message.places && message.places.length > 0 && (
-                  <MapComponent key={`map-${index}`} places={message.places} />
-                )}
+                    <LLMResponseComponent llmResponse={message.content} currentLlmResponse={currentLlmResponse} index={index} key={`llm-response-${index}`} />
 
-                <LLMResponseComponent llmResponse={message.content} currentLlmResponse={currentLlmResponse} index={index} key={`llm-response-${index}`} />
-
-                {message.settings.relevant && message.followUp && (
-                  <div className="flex flex-col">
-                    <FollowUpComponent key={`followUp-${index}`} followUp={message.followUp} handleFollowUpClick={handleFollowUpClick} />
+                    {message.settings.relevant && message.followUp && (
+                      <div className="flex flex-col">
+                        <FollowUpComponent key={`followUp-${index}`} followUp={message.followUp} handleFollowUpClick={handleFollowUpClick} />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Secondary content area */}
-              <div className="w-full md:w-1/4 md:pl-2">
-                {message.shopping && message.shopping.length > 0 && <ShoppingComponent key={`shopping-${index}`} shopping={message.shopping} />}
-                {message.settings.video && message.videos && <VideosComponent key={`videos-${index}`} videos={message.videos} />}
-                {message.settings.image && message.images && <ImagesComponent key={`images-${index}`} images={message.images} />}
-                {message.places && message.places.length > 0 && (
-                  <MapDetails key={`map-${index}`} places={message.places} />
-                )}
-              </div>
-
+                  {/* Secondary content area */}
+                  {(message.shopping?.length || message.settings.video || message.settings.image || message.places?.length) ? (
+                    <div className="secondary-content w-full md:w-1/4 md:pl-2">
+                      {message.shopping && message.shopping.length > 0 && <ShoppingComponent key={`shopping-${index}`} shopping={message.shopping} />}
+                      {message.settings.video && message.videos && <VideosComponent key={`videos-${index}`} videos={message.videos} />}
+                      {message.settings.image && message.images && <ImagesComponent key={`images-${index}`} images={message.images} />}
+                      {message.places && message.places.length > 0 && (<MapDetails key={`map-${index}`} places={message.places} />)}
+                    </div>
+                  ): null}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
+        </Flex>
+
+        {/* Right Sidebar */}
+        <Flex className="hidden lg:block lg:w-64 bg-gray-800 text-white p-4">
+          Right Sidebar Content
+        </Flex>
+      </Flex>
+
+
 
       {/* Form */}
       <div className={`px-2 fixed inset-x-0 z-20 bottom-0 w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4`}>
         <div className="mx-auto max-w-xl sm:px-4 ">
           {messages.length === 0 && (
-            <InitialQueries questions={['How is apple\'s stock doing these days?','Які основні твори Тараса Шевченка?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
+            <InitialQueries questions={['How is apple\'s stock doing these days?', 'Які основні твори Тараса Шевченка?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
           )}
 
           <form
@@ -347,8 +400,8 @@ export default function Page({params: { lang }}: {params: { lang: Locale };}) {
                       ? 'Шукаю...' 
                       : progress != 100 
                         ? log[log.length - 1].title 
-                        : `${log[log.length - 1].title} ${Math.trunc(log[log.length - 1].time/1000)} сек` }
-                    </span>
+                        : `${log[log.length - 1].title} ${Math.trunc(log[log.length - 1].time / 1000)} сек`}
+                  </span>
                 </Progress.Root>
               ) : (
                 <>
@@ -390,6 +443,6 @@ export default function Page({params: { lang }}: {params: { lang: Locale };}) {
         </div>
       </div>
       <div className="pb-[80px] pt-4 md:pt-10"></div>
-    </div>
+    </Flex>
   );
 };

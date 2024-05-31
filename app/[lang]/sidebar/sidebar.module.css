@@ -1,0 +1,42 @@
+/* App.css */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 250px;
+  background-color: #f3f4f6;
+  transition: transform 0.3s ease;
+  z-index: 10;
+}
+
+.sidebar.left {
+  left: -246px; /* Initially hide the sidebar but keep 4px visible */
+  background-color: #500;
+}
+
+.sidebar.left.open {
+  transform: translateX(250px); /* Slide in the sidebar */
+}
+
+.sidebar.right {
+  right: -246px; /* Initially hide the sidebar but keep 4px visible */
+  background-color: #555;
+}
+
+.sidebar.right.open {
+  transform: translateX(-250px); /* Slide in the sidebar */
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    position: static;
+    width: 25%;
+    transform: none !important;
+    z-index: auto;
+  }
+}
+
+.sidebar .content {
+  padding: 16px;
+}
