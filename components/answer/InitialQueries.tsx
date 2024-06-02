@@ -1,5 +1,6 @@
 import React from 'react';
-import { IconPlus } from '@/components/ui/icons';
+import { Box, Card, Flex, Text } from '@radix-ui/themes';
+import { PlusIcon } from '@radix-ui/react-icons';
 
 interface InitialQueriesProps {
   questions: string[];
@@ -12,24 +13,22 @@ const InitialQueries = ({ questions, handleFollowUpClick }: InitialQueriesProps)
   };
   
   return (
-    <div className="">
-      <div className="flex items-center">
-      </div>
-      <ul className="mt-2">
+    <Flex direction='column' gap="2" mb='2' width='100%'>
+      {/*<div className="flex items-center">
+      </div>*/}
         {questions.map((question, index) => (
-          <li
+          <Card
             key={index}
-            className="flex items-center cursor-pointer dark:bg-slate-800 bg-white shadow-lg rounded-lg p-4 my-2"
+            className="flex flex-column cursor-pointer items-center gap-3"
             onClick={() => handleQuestionClick(question)}
           >
-            <span role="img" aria-label="link" className="mr-2 dark:text-white text-black">
-              <IconPlus />
-            </span>
-            <p className="dark:text-white block sm:inline text-md sm:text-lg font-semibold dark:text-white text-black">{question}</p>
-          </li>
+            <Box role="img" aria-label="link" className="mr-2">
+              <PlusIcon />
+            </Box>
+            <Text>{question}</Text>
+          </Card>
         ))}
-      </ul>
-    </div>
+    </Flex>
   );
 };
 

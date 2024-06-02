@@ -19,9 +19,9 @@ export function Header({ lang }: { lang: Locale }) {
   };
 
   return (
-    <header className="sticky flex items-center top-0 z-20 w-full px-4 border-b h-14 shrink-0 backdrop-blur-xl">
+    <header className="sticky flex items-center top-0 z-30 w-full px-4 border-b h-14 shrink-0 backdrop-blur-xl">
       <Flex justify='between' align='center' width='100%'>
-        <Flex display={{initial: 'flex', md: 'none'}} />
+        <Flex display={{initial: 'flex'}} />
         <Flex className="inline-flex items-center home-links whitespace-nowrap">
           <img src={logo.src} width='50px' height='50px' className='bg-transparent' />
           {/* <img className="h-[50px]" src={logo.src} /> */}

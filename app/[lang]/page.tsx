@@ -32,8 +32,9 @@ import Log from '@/components/Log';
 import * as Toast from '@radix-ui/react-toast';
 import * as Progress from '@radix-ui/react-progress';
 import { Locale } from '@/i18n-config';
-import { Flex, Heading } from '@radix-ui/themes';
+import { Box, Flex, Heading } from '@radix-ui/themes';
 import { HamburgerMenuIcon } from '@radix-ui/react-icons';
+import { initialQuestions } from '@/lib/init-questions'
 
 
 export default function Page({ params: { lang } }: { params: { lang: Locale }; }) {
@@ -52,7 +53,7 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
   const [openToast, setOpenToast] = useState(false);
   const [progress, setProgress] = useState<number>(0)
 
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const leftSidebarRef = useRef<HTMLDivElement>(null);
 
 
@@ -123,7 +124,7 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
       shopping: [] as Shopping[],
       status: '',
       ticker: undefined,
-      settings: { video: true, image: true, sources: true, relevant: true },
+      settings: { video: false, image: false, sources: false, relevant: false },
       // log: [],
     };
 
@@ -255,23 +256,193 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
 
   // console.log(message.shopping || message.settings.video || message.settings.image || message.places)
   return (
-    <Flex height='100vh'>
+    <Flex height='100%'>
 
       <Button
         variant='outline'
-        className="lg:hidden fixed top-4 left-4 z-40"
+        className="fixed top-4 left-4 z-40"
         onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
       >
         <HamburgerMenuIcon />
       </Button>
+
       {/* Left Sidebar */}
       <Flex
-        ref={leftSidebarRef}
-        className={`fixed z-30 inset-y-0 left-0 w-64 bg-gray-800 text-white transform ${isLeftSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } transition-transform duration-300 ease-in-out lg:static lg:translate-x-0`}
+        width={{ initial: '60vw', sm:'50vw', md: '30vw', lg: '20vw' }}
+        py='4'
+        pr='4'
+        // ref={leftSidebarRef}
+        id='LEFT-SIDEBAR'
+        className={`fixed z-20 inset-y-0 left-0 bg-gray-800 transform ${isLeftSidebarOpen ? 'md:translate-x-0 -translate-x-full' : 'md:-translate-x-full translate-x-0'
+          } transition-transform duration-300 ease-in-out `}
       >
         <Heading className="p-4">Left Sidebar Content</Heading>
       </Flex>
+
+      <Flex
+        display={{initial: 'none', md: 'flex'}}
+        flexGrow='1'
+        py='4'
+        pr='4'
+        id='LOG-SIDEBAR'
+        className='bg-gray-800'
+      >
+        <Heading className="p-4">Log</Heading>
+      </Flex>
+
+
+
+      {/*Main content*/}
+      <Flex width={{ initial: '100vw', md: '70vw', lg: '80vw' }} p='4' id='MAIN-CONTENT'>
+        
+        
+          {messages.length > 0 && (
+            <Flex direction='column'>
+
+              {messages.map((message, index) => (
+                <Flex key={`message-${index}`} direction={{ initial: 'column', md: 'row' }}>
+                  <Flex direction='column' className={`primary-content w-full ${(message.shopping?.length || message.settings.video || message.settings.image || message.places?.length) ? 'md:w-3/4 md:pr-2' : ''} `}>
+
+                    {message.status && message.status === 'rateLimitReached' && <RateLimit />}
+
+                    {message.type === 'userMessage' && <UserMessageComponent message={message.userMessage} />}
+                    {message.translatedMessage.length > 0 && <UserMessageComponent message={message.translatedMessage} translated={true} />}
+
+                    {/*message.ticker && message.ticker.length > 0 && (
+                      <FinancialChart key={`financialChart-${index}`} ticker={message.ticker} />
+                    )*/}
+
+                    {message.settings.sources && message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
+
+                    {/*message.places && message.places.length > 0 && (
+                      <MapComponent key={`map-${index}`} places={message.places} />
+                    )*/}
+
+                    <LLMResponseComponent llmResponse={message.content} currentLlmResponse={currentLlmResponse} index={index} key={`llm-response-${index}`} lang={lang} />
+
+                    {message.settings.relevant && message.followUp && (
+                      <Flex direction='column'>
+                        <FollowUpComponent key={`followUp-${index}`} followUp={message.followUp} handleFollowUpClick={handleFollowUpClick} />
+                      </Flex>
+                    )}
+                  </Flex>
+
+                  {/* Secondary content area */}
+                  {(message.shopping?.length || message.settings.video || message.settings.image || message.places?.length) ? (
+                    <Flex width={{ initial: '100%', md: '1/4' }} pl={{ md: '2' }} className="secondary-content">
+                      {/*message.shopping && message.shopping.length > 0 && <ShoppingComponent key={`shopping-${index}`} shopping={message.shopping} />*/}
+                      {message.settings.video && message.videos && <VideosComponent key={`videos-${index}`} videos={message.videos} />}
+                      {message.settings.image && message.images && <ImagesComponent key={`images-${index}`} images={message.images} />}
+                      {/*message.places && message.places.length > 0 && (<MapDetails key={`map-${index}`} places={message.places} />)*/}
+                    </Flex>
+                  ) : null}
+                </Flex>
+              ))}
+            </Flex>
+          )}
+       
+
+      </Flex>
+
+      {/* Right Sidebar */}
+      {/*<Flex display={{ initial: 'none', lg: 'flex' }} width={{ lg: '20vw' }} py='4' pl='4' className='bg-gray-800'>
+        <Heading>Right Sidebar Content</Heading>
+      </Flex>*/}
+
+
+      {/* Form */}
+      <Box className={`INIT-FORM px-2 fixed z-20 top-[67vh] left-[50%] md:left-[48%] lg:left-[60%] transform -translate-x-[50%] -translate-y-[50%]  w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4`}>
+
+        <Flex width='100%' justify={{ initial: 'center', sm: 'end', lg: 'center' }}>
+          <Flex direction='column' width={{ initial: '100%', sm: '65%', md:'60%', lg: '55%' }} ml='2' mr={{initial: '2', sm: '4', lg: '2'}} >
+            {messages.length === 0 && (
+              <InitialQueries questions={initialQuestions} handleFollowUpClick={handleFollowUpClick} />
+            )}
+      
+            <form
+              className='w-full'
+              ref={formRef}
+              onSubmit={async (e: FormEvent<HTMLFormElement>) => {
+                e.preventDefault();
+                handleFormSubmit(e);
+                setCurrentLlmResponse('');
+                if (window.innerWidth < 600) {
+                  (e.target as HTMLFormElement)['message']?.blur();
+                }
+                const value = inputValue.trim();
+                setInputValue('');
+                if (!value) return;
+              }}
+            >
+              <div className="relative flex flex-col w-full overflow-hidden max-h-60 grow dark:bg-slate-800 bg-gray-100 rounded-md border sm:px-2">
+      
+                {progress ? (
+                  <Progress.Root
+                    className="relative flex justify-center items-center overflow-hidden bg-[#41347d] rounded-full w-full h-[2.6rem]"
+                    style={{
+                      // Fix overflow clipping in Safari
+                      // https://gist.github.com/domske/b66047671c780a238b51c51ffde8d3a0
+                      transform: 'translateZ(0)',
+                    }}
+                    value={progress}
+                  >
+                    <Progress.Indicator
+                      className="absolute z-10 bg-[#2563eb] w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.65, 0, 0.35, 1)]"
+                      style={{ transform: `translateX(-${100 - progress}%)` }}
+                    />
+                    <span className='z-30 text-gray-200'>
+                      {progress === 10 
+                        ? 'Шукаю...' 
+                        : progress != 100 
+                          ? log[log.length - 1].title 
+                          : `${log[log.length - 1].title} ${Math.trunc(log[log.length - 1].time / 1000)} сек`}
+                    </span>
+                  </Progress.Root>
+                ) : (
+                  <>
+                    <Textarea
+                      ref={inputRef}
+                      tabIndex={0}
+                      onKeyDown={onKeyDown}
+                      placeholder="Send a message."
+                      className="w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm dark:text-white text-black pr-[45px]"
+                      autoFocus
+                      spellCheck={false}
+                      autoComplete="off"
+                      autoCorrect="off"
+                      name="message"
+                      rows={1}
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                    />
+      
+                    <ChatScrollAnchor trackVisibility={true} />
+      
+                    <div className="absolute right-5 top-4">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button type="submit" size="icon" disabled={inputValue === ''}>
+                            <ArrowUp />
+                            <span className="sr-only">Найда, шукай!</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Найда, шукай!</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </>
+                )}
+      
+              </div>
+            </form>
+      
+          </Flex>
+        </Flex>      
+        </Box>
+
+      {/*<div className="pb-[80px] pt-4 md:pt-10"></div>*/}
+    </Flex>
+  );
+};
 
       {/* LOG */}
       {/*      <div className={`shadow-lg transition-transform duration-300 ease-in-out transform ${!showLog ? '-translate-x-[262px]' : 'translate-x-0'} knopka fixed bottom-[0vh] left-[262px] `}>
@@ -300,149 +471,3 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
         </Toast.Root>
         <Toast.Viewport className="[--viewport-padding:_25px] fixed bottom-0 right-0 flex flex-col p-[var(--viewport-padding)] gap-[10px] w-[390px] max-w-[100vw] m-0 list-none z-[2147483647] outline-none" />
       </Toast.Provider> */}
-
-      <Flex className="flex-1 flex flex-col lg:flex-row">
-        {/* Main Section */}
-        <Flex className="flex-1 p-4">
-          {messages.length > 0 && (
-            <div className="flex flex-col">
-
-              {messages.map((message, index) => (
-                <div key={`message-${index}`} className="flex flex-col md:flex-row">
-                  <div className={`primary-content w-full ${(message.shopping?.length || message.settings.video || message.settings.image || message.places?.length) ? 'md:w-3/4 md:pr-2' : ''} `}>
-
-                    {message.status && message.status === 'rateLimitReached' && <RateLimit />}
-
-                    {message.type === 'userMessage' && <UserMessageComponent message={message.userMessage} />}
-                    {message.translatedMessage.length > 0 && <UserMessageComponent message={message.translatedMessage} translated={true} />}
-
-                    {message.ticker && message.ticker.length > 0 && (
-                      <FinancialChart key={`financialChart-${index}`} ticker={message.ticker} />
-                    )}
-
-                    {message.settings.sources && message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
-
-                    {message.places && message.places.length > 0 && (
-                      <MapComponent key={`map-${index}`} places={message.places} />
-                    )}
-
-                    <LLMResponseComponent llmResponse={message.content} currentLlmResponse={currentLlmResponse} index={index} key={`llm-response-${index}`} />
-
-                    {message.settings.relevant && message.followUp && (
-                      <div className="flex flex-col">
-                        <FollowUpComponent key={`followUp-${index}`} followUp={message.followUp} handleFollowUpClick={handleFollowUpClick} />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Secondary content area */}
-                  {(message.shopping?.length || message.settings.video || message.settings.image || message.places?.length) ? (
-                    <div className="secondary-content w-full md:w-1/4 md:pl-2">
-                      {message.shopping && message.shopping.length > 0 && <ShoppingComponent key={`shopping-${index}`} shopping={message.shopping} />}
-                      {message.settings.video && message.videos && <VideosComponent key={`videos-${index}`} videos={message.videos} />}
-                      {message.settings.image && message.images && <ImagesComponent key={`images-${index}`} images={message.images} />}
-                      {message.places && message.places.length > 0 && (<MapDetails key={`map-${index}`} places={message.places} />)}
-                    </div>
-                  ): null}
-                </div>
-              ))}
-            </div>
-          )}
-        </Flex>
-
-        {/* Right Sidebar */}
-        <Flex className="hidden lg:block lg:w-64 bg-gray-800 text-white p-4">
-          Right Sidebar Content
-        </Flex>
-      </Flex>
-
-
-
-      {/* Form */}
-      <div className={`px-2 fixed inset-x-0 z-20 bottom-0 w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4`}>
-        <div className="mx-auto max-w-xl sm:px-4 ">
-          {messages.length === 0 && (
-            <InitialQueries questions={['How is apple\'s stock doing these days?', 'Які основні твори Тараса Шевченка?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
-          )}
-
-          <form
-            ref={formRef}
-            onSubmit={async (e: FormEvent<HTMLFormElement>) => {
-              e.preventDefault();
-              handleFormSubmit(e);
-              setCurrentLlmResponse('');
-              if (window.innerWidth < 600) {
-                (e.target as HTMLFormElement)['message']?.blur();
-              }
-              const value = inputValue.trim();
-              setInputValue('');
-              if (!value) return;
-            }}
-          >
-            <div className="relative flex flex-col w-full overflow-hidden max-h-60 grow dark:bg-slate-800 bg-gray-100 rounded-md border sm:px-2">
-
-              {progress ? (
-                <Progress.Root
-                  className="relative flex justify-center items-center overflow-hidden bg-[#41347d] rounded-full w-full h-[2.6rem]"
-                  style={{
-                    // Fix overflow clipping in Safari
-                    // https://gist.github.com/domske/b66047671c780a238b51c51ffde8d3a0
-                    transform: 'translateZ(0)',
-                  }}
-                  value={progress}
-                >
-                  <Progress.Indicator
-                    className="absolute z-10 bg-[#2563eb] w-full h-full transition-transform duration-1000 ease-[cubic-bezier(0.65, 0, 0.35, 1)]"
-                    style={{ transform: `translateX(-${100 - progress}%)` }}
-                  />
-                  <span className='z-30 text-gray-200'>
-                    {progress === 10 
-                      ? 'Шукаю...' 
-                      : progress != 100 
-                        ? log[log.length - 1].title 
-                        : `${log[log.length - 1].title} ${Math.trunc(log[log.length - 1].time / 1000)} сек`}
-                  </span>
-                </Progress.Root>
-              ) : (
-                <>
-                  <Textarea
-                    ref={inputRef}
-                    tabIndex={0}
-                    onKeyDown={onKeyDown}
-                    placeholder="Send a message."
-                    className="w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm dark:text-white text-black pr-[45px]"
-                    autoFocus
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    name="message"
-                    rows={1}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                  />
-
-                  <ChatScrollAnchor trackVisibility={true} />
-
-                  <div className="absolute right-5 top-4">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button type="submit" size="icon" disabled={inputValue === ''}>
-                          <ArrowUp />
-                          <span className="sr-only">Найда, шукай!</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Найда, шукай!</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </>
-              )}
-
-            </div>
-          </form>
-
-        </div>
-      </div>
-      <div className="pb-[80px] pt-4 md:pt-10"></div>
-    </Flex>
-  );
-};

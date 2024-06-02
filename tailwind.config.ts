@@ -69,6 +69,22 @@ const config: Config = {
         },
       },
     },
+    screens: {
+    'xs': '520px',
+    // => @media (min-width: 576px) { ... }
+    
+    'sm': '768px',
+    // => @media (min-width: 576px) { ... }
+
+    'md': '1024px',
+    // => @media (min-width: 960px) { ... }
+
+    'lg': '1280px',
+    // => @media (min-width: 1440px) { ... }
+            
+    'xl': '1640px',
+    // => @media (min-width: 576px) { ... }
+    }
   },
   plugins: [require('tailwindcss-animate')],
 };

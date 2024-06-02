@@ -13,6 +13,7 @@ const PageWithSidebars: React.FC = () => {
     }
   };
 
+  // керування лівим сайдбаром
   useEffect(() => {
     if (isLeftSidebarOpen) {
       document.addEventListener('click', handleOutsideClick);
