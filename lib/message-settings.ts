@@ -1,23 +1,23 @@
 import { MessageSettings } from "@/types/types";
 
 export const defaultMessageSettings: MessageSettings = {
-  messageLang: 'uk',
+  messageLang: 'en',
   searchLang: 'en',
-  answerLang: 'uk',
+  answerLang: 'en',
   searchSystem: 'google',
 
-  embeddingsModel: 'nomic-embed-text-v1',
+  embeddingsModel: 'sentence-transformers/all-MiniLM-L6-v2',
   inferenceModel: 'mixtral-8x7b-32768',
 
   showSources: true,
-  showImages: true,
-  showVideo: true,
-  showFollowup: true,
+  showImages: false,
+  showVideo: false,
+  showFollowup: false,
   messageOptimization: false,
 
-  textChunkSize: 1000,
-  textChunkOverlap: 400,
+  textChunkSize: 500,
+  textChunkOverlap: 200,
   similarityResults: 4,
-  pagesToScan: 10,
-  timeoutGetBlueLinks: 800,
+  pagesToScan: 5,
+  timeoutGetBlueLinks: 1000,
 }

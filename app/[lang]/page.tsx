@@ -2,7 +2,7 @@
 // 1. Import Dependencies
 import { FormEvent, useEffect, useRef, useState, useCallback, use } from 'react';
 import { useActions, readStreamableValue } from 'ai/rsc';
-import { type AI } from './action';
+import { AI } from './action';
 import { ChatScrollAnchor } from '@/lib/hooks/chat-scroll-anchor';
 import Textarea from 'react-textarea-autosize';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
@@ -293,7 +293,7 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
 
 
       {/*Main content*/}
-      <Flex width={{ initial: '100vw', md: '70vw', lg: '80vw' }} p='4' id='MAIN-CONTENT'>
+      <Flex direction='column' width={{ initial: '100vw', md: '70vw', lg: '80vw' }} p='4' id='MAIN-CONTENT'>
         
         
           {messages.length > 0 && (
@@ -342,18 +342,10 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
           )}
        
 
-      </Flex>
-
-      {/* Right Sidebar */}
-      {/*<Flex display={{ initial: 'none', lg: 'flex' }} width={{ lg: '20vw' }} py='4' pl='4' className='bg-gray-800'>
-        <Heading>Right Sidebar Content</Heading>
-      </Flex>*/}
-
-
       {/* Form */}
-      <Box className={`INIT-FORM px-2 fixed z-20 top-[67vh] left-[50%] md:left-[48%] lg:left-[60%] transform -translate-x-[50%] -translate-y-[50%]  w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4`}>
+      <Box mx={{initial: 'auto', lg: '0'}} className={`INIT-FORM px-2 fixed w-full z-20 left-0 md:left-[35vw] bottom-0 bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4`}>
 
-        <Flex width='100%' justify={{ initial: 'center', sm: 'end', lg: 'center' }}>
+        <Flex width='100%' justify={{ initial: 'center', md: 'start' }}>
           <Flex direction='column' width={{ initial: '100%', sm: '65%', md:'60%', lg: '55%' }} ml='2' mr={{initial: '2', sm: '4', lg: '2'}} >
             {messages.length === 0 && (
               <InitialQueries questions={initialQuestions} handleFollowUpClick={handleFollowUpClick} />
@@ -438,6 +430,14 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
           </Flex>
         </Flex>      
         </Box>
+
+      </Flex>
+
+      {/* Right Sidebar */}
+      {/*<Flex display={{ initial: 'none', lg: 'flex' }} width={{ lg: '20vw' }} py='4' pl='4' className='bg-gray-800'>
+        <Heading>Right Sidebar Content</Heading>
+      </Flex>*/}
+
 
       {/*<div className="pb-[80px] pt-4 md:pt-10"></div>*/}
     </Flex>
