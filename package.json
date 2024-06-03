@@ -10,7 +10,6 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx}\" --cache"
   }, 
-  "type": "module",
   "dependencies": {
     "@huggingface/inference": "^2.6.7",
     "@langchain/community": "^0.0.40",
