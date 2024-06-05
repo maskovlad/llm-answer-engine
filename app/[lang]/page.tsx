@@ -2,7 +2,7 @@
 // 1. Import Dependencies
 import { FormEvent, useEffect, useRef, useState, useCallback, use } from 'react';
 import { useActions, readStreamableValue } from 'ai/rsc';
-import { type AI } from './action';
+import {  AI } from './action';
 import { ChatScrollAnchor } from '@/lib/hooks/chat-scroll-anchor';
 import Textarea from 'react-textarea-autosize';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
@@ -305,7 +305,7 @@ export default function Page({params: { lang }}: {params: { lang: Locale };}) {
         </div>
       )}
 
-      {/* Form */}
+      {/* Form  data-state якось відносться до tooltips*/}
       <div className={`px-2 fixed inset-x-0 z-20 bottom-0 w-full bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]] mb-4`}>
         <div className="mx-auto max-w-xl sm:px-4 ">
           {messages.length === 0 && (
