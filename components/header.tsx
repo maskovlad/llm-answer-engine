@@ -6,6 +6,7 @@ import { logo } from '@/public'
 import Sidebar from './sidebar';
 import { Locale } from '@/i18n-config';
 import LocaleSwitcher from './locale-switcher';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Header({lang}: {lang: Locale}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -26,6 +27,7 @@ export function Header({lang}: {lang: Locale}) {
         </span>
 
         <div className="flex items-center justify-end space-x-2">
+          <ThemeToggle />
           <LocaleSwitcher curLocale={lang} />
           <Button variant="outline" asChild onClick={toggleSidebar}>
             <a

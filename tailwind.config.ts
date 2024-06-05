@@ -9,6 +9,7 @@ const config: Config = {
     './ai_hooks/**/*.{js,ts,jsx,tsx}',
     
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {

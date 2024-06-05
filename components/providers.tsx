@@ -8,7 +8,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
-    <NextThemesProvider {...props}>
+    <NextThemesProvider attribute='class' {...props}>
       <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
     </NextThemesProvider>
   );
