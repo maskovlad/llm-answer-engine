@@ -230,13 +230,12 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
     setLog([])
   }
 
-  // console.log(showSidebar)
+  console.log(showSidebar)
   return (
     <div className='flex w-full h-full overflow-hidden'>
 
       <div
-        style={{ width: showSidebar ? 260 : 0, visibility: showSidebar ? 'visible' : 'hidden', transition: 'all 300ms ease-in-out 0s' }} 
-        className={`LEFT-SIDEBAR flex-shrink-0 overflow-x-hidden`}
+        className={`LEFT-SIDEBAR flex-shrink-0 overflow-x-hidden fixed lg:static transition-all duration-200 ease-out ${showSidebar ? "max-lg:translate-x-0 ml-0":"max-lg:translate-x-[-260px] lg:ml-[-260px]"}`}
       >
         <div className='h-full w-[260px]'>
           <div className='flex h-full min-h-0 flex-col border border-gray-600'>
