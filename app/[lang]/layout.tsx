@@ -47,6 +47,7 @@ export default function Layout({
   return (
       <body
         className={`font-sans antialiased ${GeistSans.variable} ${GeistMono.variable}`}
+        style={{height: '100vh'}}
       >
         <Toaster />
         <AI>
@@ -56,9 +57,9 @@ export default function Layout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="flex flex-col min-h-screen">
-              <Header lang={lang} />
-              <main className="flex flex-col flex-1 bg-muted/50 dark:bg-background px-4">
+            <div className="flex flex-col min-h-screen" style={{height:'100%'}}>
+              {/* <Header lang={lang} /> */}
+              <main className="flex flex-col flex-1 bg-muted/50 dark:bg-background">
                 {children}
               </main>
             </div>
