@@ -58,7 +58,7 @@ export default function Layout({
             disableTransitionOnChange
           >
             <div className="flex flex-col min-h-screen" style={{height:'100%'}}>
-              <Header lang={lang} />
+              {/* <Header lang={lang} /> */}
               <main className="flex flex-col flex-1 bg-muted/50 dark:bg-background">
                 {children}
               </main>

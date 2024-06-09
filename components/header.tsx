@@ -17,13 +17,12 @@ export function Header({lang}: {lang: Locale}) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex items-center justify-between w-full px-4 border-b h-14 shrink-0 dark:bg-slate-800 bg-white backdrop-blur-xl">
-        <span className="inline-flex items-center home-links whitespace-nowrap">
+      <header className="z-50 flex items-center justify-between lg:justify-end w-full px-4 h-14 shrink-0 dark:bg-slate-800 bg-white backdrop-blur-xl">
+        <span className="lg:hidden inline-flex items-center home-links whitespace-nowrap">
           <img className="h-[50px]" src={logo.src} />
           <a className='inline-flex' href="https://naida.vercel.app" rel="noopener" target="_blank">
             <span className="block sm:inline text-lg sm:text-xl lg:text-2xl font-semibold dark:text-white text-black">NAIDA </span>
           </a>
-          {/* <span className="linear-wipe text-sm">ШІстема пошуку відповідей (alpha)</span> */}
         </span>
 
         <div className="flex items-center justify-end space-x-2">

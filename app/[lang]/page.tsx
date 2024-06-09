@@ -32,8 +32,10 @@ import Log from '@/components/Log';
 import * as Toast from '@radix-ui/react-toast';
 import * as Progress from '@radix-ui/react-progress';
 import { Locale } from '@/i18n-config';
-import { EnterIcon } from '@radix-ui/react-icons';
+import { ArrowLeftIcon, ChevronRightIcon, EnterIcon } from '@radix-ui/react-icons';
 import { useMediaQuery } from '@/lib/hooks/use-media-query'
+import { Header } from '@/components/header';
+import { logo } from '@/public';
 
 
 export default function Page({ params: { lang } }: { params: { lang: Locale }; }) {
@@ -59,7 +61,7 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
   //   setLog([...log, newString] )
   // };
 
-  useEffect(() => { setShowSidebar(window.innerWidth > 767) },[])
+  useEffect(() => { setShowSidebar(window.innerWidth > 767) }, [])
   // 7. Set up handler for when the user clicks on the follow up button
   const handleFollowUpClick = useCallback(async (question: string) => {
     setCurrentLlmResponse('');
@@ -230,58 +232,67 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
     setLog([])
   }
 
-  console.log(showSidebar)
+  // console.log(showSidebar)
   return (
     <div className='flex w-full h-full overflow-hidden'>
 
+      {/* SIDEBAR */}
       <div
-        className={`LEFT-SIDEBAR flex-shrink-0 overflow-x-hidden fixed lg:static transition-all duration-200 ease-out ${showSidebar ? "max-lg:translate-x-0 ml-0":"max-lg:translate-x-[-260px] lg:ml-[-260px]"}`}
+        className={`LEFT-SIDEBAR flex-shrink-0 overflow-x-hidden bg-background z-10 fixed lg:static transition-all duration-200 ease-out ${showSidebar ? "max-lg:translate-x-0 ml-0" : "max-lg:translate-x-[-260px] lg:ml-[-260px]"}`}
       >
-        <div className='h-full w-[260px]'>
-          <div className='flex h-full min-h-0 flex-col border border-gray-600'>
-            Side bar
+        <div className='h-screen w-[260px] p-2'>
+          <div className='flex h-full flex-col'>
+            <div className='flex flex-col overflow-y-auto'>
+
+              <div className="max-lg:hidden w-full inline-flex items-center home-links whitespace-nowrap mb-4">
+                <img className="h-[50px]" src={logo.src} />
+                <a className='inline-flex' href="https://naida.vercel.app" rel="noopener" target="_blank">
+                  <span className="block sm:inline text-lg sm:text-xl lg:text-2xl font-semibold dark:text-white text-black">NAIDA</span>
+                </a>
+                {/* <span className="linear-wipe text-sm">ШІстема пошуку відповідей (alpha)</span> */}
+              </div>
+
+              <div>New question</div>
+            </div>
+
+            <div className='flex flex-col flex-grow justify-end'>
+              <div>Settings</div>
+              <div>Profile</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* LOG */}
-      {/* <div className={` ${!showLog ? '-translate-x-[262px]' : 'translate-x-0'} knopka fixed bottom-[0vh] left-[262px] `}>
-        <button
-          onClick={() => setShowSidebar(!showSidebar)}
-          className="text-gray-500 hover:text-gray-600 focus:outline-none"
-        >
-          Log
-        </button>
-      </div>
-      <Log text={log} isOpen={showLog} clear={clearLog} /> */}
+      <div className='MAIN-CONTENT relative flex h-screen max-w-full flex-1 flex-col overflow-hidden'>
 
-      <div className='MAIN-CONTENT relative flex h-full max-w-full flex-1 flex-col overflow-hidden'>
-        <div className='relative h-full w-full flex-1 overflow-auto transition-width'>
+        <div className='relative  w-full flex-1 transition-width pl-8'>
 
 
           {/* Button open sidebar */}
-          <div className="fixed left-0 top-1/2 z-40 transition-transform duration-300 ease-in-out transform " style={{ transform: showSidebar ? "translateX(260px) rotateZ(180deg)" : "translateX(0) rotateZ(0)" }}>
+          <div className="fixed left-0 top-1/2 z-40 transition-transform duration-300 ease-in-out transform " style={{ transform: showSidebar ? "translateX(230px) rotateZ(180deg)" : "translateX(0) rotateZ(0)" }}>
             <button
               onClick={() => setShowSidebar(!showSidebar)}
               className='bg-transparent text-gray-600 dark:text-gray-200 p-2'
             >
-              <EnterIcon />
+              <ChevronRightIcon width={20} height={20} />
             </button>
           </div>
 
-          <div className='flex h-full flex-col focus-visible:outline-0'>
+          <div className='flex h-screen w-full flex-col focus-visible:outline-0'>
 
-            <div className='flex-1 overflow-hidden'>
-              <div className='relative h-full'>
-                <div className='flex h-full flex-col items-center justify-center text-token-text-primary'>
+            <div className='overflow-y-auto'>
+              <div className='relative'>
+                <Header lang={lang} />
+
+                <div className='flex h-full flex-col items-center justify-center'>
 
                   {messages.length > 0 ? (
-                    <div className="flex flex-col w-full">
+                    <div className="flex flex-col w-full"> {/** Усі месседжі */}
 
                       {messages.map((message, index) => (
-                        <div key={`message-${index}`} className="h-full w-full overflow-y-auto">
+                        <div key={`message-${index}`} className="h-full w-full"> {/** окремий месседж */}
 
-
+                          {/** Головний контент */}
                           <div className="w-full md:w-3/4 md:pr-2">
 
                             {/* {message.status && message.status === 'rateLimitReached' && <RateLimit />} */}
@@ -324,6 +335,7 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
 
                     </div>
                   ) : (<div>No messages</div>)}
+
                 </div>
 
               </div>
@@ -332,9 +344,9 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
 
 
 
-            <div id='FORM-WRAPPER' className={`w-full md:pt-0 dark:border-white/20 md:border-transparent md:dark:border-transparent md:w-[calc(100%-.5rem)] sm:w-full`} style={{ paddingLeft: 0, paddingRight: 0 }}>
+            <div id='FORM-WRAPPER' className={`flex-grow flex flex-col justify-end align-center w-full md:pt-0 dark:border-white/20 md:border-transparent md:dark:border-transparent md:w-[calc(100%-.5rem)] sm:w-full`} style={{ paddingLeft: 0, paddingRight: 0 }}>
 
-              <div className="px-3 text-base md:px-4 m-auto md:px-5 lg:px-1 xl:px-5">
+              <div className="px-3 text-base md:px-4 mx-auto md:px-5 lg:px-1 xl:px-5">
 
                 <div className='mx-auto flex flex-1 gap-3 text-base juice:gap-4 juice:md:gap-6 md:max-w-3xl lg:max-w-[40rem] xl:max-w-[48rem]'>
 
@@ -434,6 +446,7 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
 
                     </div>
                   </form>
+
                 </div>
               </div>
             </div>
@@ -442,12 +455,23 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
         </div>
       </div>
 
-      {/* Form  data-state якось відносться до tooltips*/}
-
       {/* <div className="pb-[80px] pt-4 md:pt-10"></div> */}
     </div>
   );
 };
+
+{/* LOG */ }
+{/* <div className={` ${!showLog ? '-translate-x-[262px]' : 'translate-x-0'} knopka fixed bottom-[0vh] left-[262px] `}>
+        <button
+          onClick={() => setShowSidebar(!showSidebar)}
+          className="text-gray-500 hover:text-gray-600 focus:outline-none"
+        >
+          Log
+        </button>
+      </div>
+      <Log text={log} isOpen={showLog} clear={clearLog} /> */}
+
+
 
 {/* <Toast.Provider swipeDirection="right"> */ }
 {/* <button
