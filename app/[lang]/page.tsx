@@ -284,20 +284,20 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
 
                           <div className="w-full md:w-3/4 md:pr-2">
 
-                            {message.status && message.status === 'rateLimitReached' && <RateLimit />}
+                            {/* {message.status && message.status === 'rateLimitReached' && <RateLimit />} */}
 
                             {message.type === 'userMessage' && <UserMessageComponent message={message.userMessage} />}
                             {message.translatedMessage.length > 0 && <UserMessageComponent message={message.translatedMessage} translated={true} />}
 
-                            {message.ticker && message.ticker.length > 0 && (
+                            {/* {message.ticker && message.ticker.length > 0 && (
                               <FinancialChart key={`financialChart-${index}`} ticker={message.ticker} />
-                            )}
+                            )} */}
 
                             {message.settings.sources && message.searchResults && (<SearchResultsComponent key={`searchResults-${index}`} searchResults={message.searchResults} />)}
 
-                            {message.places && message.places.length > 0 && (
+                            {/* {message.places && message.places.length > 0 && (
                               <MapComponent key={`map-${index}`} places={message.places} />
-                            )}
+                            )} */}
 
                             <LLMResponseComponent llmResponse={message.content} currentLlmResponse={currentLlmResponse} index={index} key={`llm-response-${index}`} />
 
@@ -310,12 +310,12 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
 
                           {/* Secondary content area */}
                           <div className="w-full md:w-1/4 md:pl-2">
-                            {message.shopping && message.shopping.length > 0 && <ShoppingComponent key={`shopping-${index}`} shopping={message.shopping} />}
+                            {/* {message.shopping && message.shopping.length > 0 && <ShoppingComponent key={`shopping-${index}`} shopping={message.shopping} />} */}
                             {message.settings.video && message.videos && <VideosComponent key={`videos-${index}`} videos={message.videos} />}
                             {message.settings.image && message.images && <ImagesComponent key={`images-${index}`} images={message.images} />}
-                            {message.places && message.places.length > 0 && (
+                            {/* {message.places && message.places.length > 0 && (
                               <MapDetails key={`map-${index}`} places={message.places} />
-                            )}
+                            )} */}
                           </div>
 
                         </div>
