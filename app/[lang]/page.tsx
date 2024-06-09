@@ -344,12 +344,15 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
 
 
 
-            <div id='FORM-WRAPPER' className={`flex-grow flex flex-col justify-end align-center w-full md:pt-0 dark:border-white/20 md:border-transparent md:dark:border-transparent md:w-[calc(100%-.5rem)] sm:w-full`} style={{ paddingLeft: 0, paddingRight: 0 }}>
+            <div id='FORM-WRAPPER' className={`flex-grow flex flex-col justify-end align-center w-full md:pt-0 bg-gradient-to-b duration-300 ease-in-out animate-in dark:from-gray-900/10 dark:from-10% md:w-[calc(100%-.5rem)] sm:w-full`} style={{ paddingLeft: 0, paddingRight: 0 }}>
 
-              <div className="px-3 text-base md:px-4 mx-auto md:px-5 lg:px-1 xl:px-5">
+              <div className="px-3 w-full md:px-4 mx-auto md:px-5 lg:px-1 xl:px-5">
 
-                <div className='mx-auto flex flex-1 gap-3 text-base juice:gap-4 juice:md:gap-6 md:max-w-3xl lg:max-w-[40rem] xl:max-w-[48rem]'>
+                <div className='mx-auto max-w-xl sm:px-4'>
 
+                  {messages.length === 0 && (
+                    <InitialQueries questions={['How is apple\'s stock doing these days?', 'Які основні твори Тараса Шевченка?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
+                  )}
 
                   <form
                     className='w-full'
@@ -368,26 +371,6 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
                   >
                     <div className="relative flex h-full max-w-full flex-1 flex-col">
 
-                      {/* <div className="absolute bottom-full left-0 right-0 z-20">
-                        <div className="relative h-full w-full">
-                          <div className="flex flex-col gap-3.5 pb-3.5 pt-2">
-                            <div>
-                              <div className="h-full flex ml-1 md:w-full md:m-auto gap-0 md:gap-2 justify-center">
-                                <div className="grow">
-                                  <div className="absolute bottom-full left-0 mb-4 flex w-full grow gap-2 px-1 pb-1 sm:px-2 sm:pb-0 md:static md:mb-0 md:max-w-none">
-                                    <div className="grid w-full grid-flow-row grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-2">
-                                      {messages.length === 0 && (
-                                        <InitialQueries questions={['How is apple\'s stock doing these days?', 'Які основні твори Тараса Шевченка?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
- */}
                       {progress ? (
                         <Progress.Root
                           className="relative flex justify-center items-center overflow-hidden bg-[#41347d] rounded-full w-full h-[2.6rem]"
@@ -455,7 +438,7 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
         </div>
       </div>
 
-      {/* <div className="pb-[80px] pt-4 md:pt-10"></div> */}
+      <div className="pb-[80px] pt-4 md:pt-10"></div>
     </div>
   );
 };
@@ -490,3 +473,23 @@ export default function Page({ params: { lang } }: { params: { lang: Locale }; }
         <Toast.Viewport className="[--viewport-padding:_25px] fixed bottom-0 right-0 flex flex-col p-[var(--viewport-padding)] gap-[10px] w-[390px] max-w-[100vw] m-0 list-none z-[2147483647] outline-none" />
       </Toast.Provider> */}
 
+                      {/* <div className="absolute bottom-full left-0 right-0 z-20">
+                        <div className="relative h-full w-full">
+                          <div className="flex flex-col gap-3.5 pb-3.5 pt-2">
+                            <div>
+                              <div className="h-full flex ml-1 md:w-full md:m-auto gap-0 md:gap-2 justify-center">
+                                <div className="grow">
+                                  <div className="absolute bottom-full left-0 mb-4 flex w-full grow gap-2 px-1 pb-1 sm:px-2 sm:pb-0 md:static md:mb-0 md:max-w-none">
+                                    <div className="grid w-full grid-flow-row grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-2">
+                                      {messages.length === 0 && (
+                                        <InitialQueries questions={['How is apple\'s stock doing these days?', 'Які основні твори Тараса Шевченка?', 'What were the key accomplishments of Bohdan Khmelnytsky?', 'What are the main works of Taras Shevchenko?']} handleFollowUpClick={handleFollowUpClick} />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+ */}
